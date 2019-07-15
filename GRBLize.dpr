@@ -31,7 +31,10 @@ uses
   Vcl.Themes,
   Vcl.Styles,
   ParamAssist in 'ParamAssist.pas' {FormParamAssist},
-  TouchButton in 'TouchButton.pas';
+  TouchButton in 'TouchButton.pas',
+  AssistRect in 'AssistRect.pas' {FormAssistRect},
+  AssistCircle in 'AssistCircle.pas' {FormAssistCircle},
+  AssistLine in 'AssistLine.pas' {FormAssistLine};
 
 {$R *.res}
 
@@ -42,6 +45,9 @@ begin
   Application.CreateForm(TAboutBox, AboutBox);
   Application.CreateForm(TFormGerber, FormGerber);
   Application.CreateForm(TFormParamAssist, FormParamAssist);
+  Application.CreateForm(TFormAssistRect, FormAssistRect);
+  Application.CreateForm(TFormAssistCircle, FormAssistCircle);
+  Application.CreateForm(TFormAssistLine, FormAssistLine);
   Application.Run;
   Application.Terminate;
 end.

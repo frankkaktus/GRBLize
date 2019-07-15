@@ -319,8 +319,8 @@ var Scale  : double;                          // scale between file and internal
       end;
       if valid and (xx<>100) and (yy<>100) then exit;
     end;
-
-    Form1.Memo1.lines.add('ERROR: Unbekannter Parameter in DIM-File: ' + Line);
+    if job.firstLoad[fileId] then
+      Form1.ReportInfo('Unbekannter Parameter in DIM-File: ' + Line);
   end;
 
   procedure dim_import_cmd(line: String; fileID, penOverride: Integer);
@@ -379,7 +379,8 @@ var Scale  : double;                          // scale between file and internal
         exit;
       end;
     end;
-    Form1.Memo1.lines.add('ERROR: Unbekanntes Kommando in DIM-File: ' + Line);
+    if job.firstLoad[fileId] then
+      Form1.ReportInfo('Unbekanntes Kommando in DIM-File: ' + Line);
   end;
 
 var
@@ -434,6 +435,7 @@ begin
   FileParamArray[fileID].valid := true;
   file_Rotate_Mirror_Scale_Offset(fileID, true); // auto close path
   block_scale_file(fileID);
+  job.firstLoad[fileId]:= false;
 end;
 
 // #############################################################################
@@ -670,37 +672,39 @@ function TSvg.Analysis(const Line:string):boolean;
 var i: integer;
     s: string;
 begin
-  Analysis := false;                         // letzte Zeile noch nicht erreicht
+                   // letzte Zeile des Elements gefunden?, Analyse abgeschlossen
+  Analysis := pos('</svg>',Line) > 0;
+
   if state <> incomplete then exit;
-try
-  if Find(' height="', Line, i) then
-    if ParseLine(i, Line, Hmm, s) <> p_number then exit;   // Seitenhöhe in [mm]
 
-  if Find('viewBox="', Line, i) then begin
-    if ParseLine(i, Line, val, s) <> p_number then exit;
-    if ParseLine(i, Line, val, s) <> p_number then exit;
-    if ParseLine(i, Line, val, s) <> p_number then exit;
-    if ParseLine(i, Line, Hpx, s) <> p_number then exit;
+  try
+    if Find(' height="', Line, i) then
+      if ParseLine(i, Line, Hmm, s) <> p_number then exit; // Seitenhöhe in [mm]
+
+    if Find('viewBox="', Line, i) then begin
+      if ParseLine(i, Line, val, s) <> p_number then exit;
+      if ParseLine(i, Line, val, s) <> p_number then exit;
+      if ParseLine(i, Line, val, s) <> p_number then exit;
+      if ParseLine(i, Line, Hpx, s) <> p_number then exit;
+    end;
+
+    state := incomplete;
+
+  finally
+    if state = error then begin
+      Form1.ReportInfo('Zeile nicht auswertbar: ' + Line);
+      state:= corrupt;
+    end;
   end;
-
-  state := incomplete;
-
-finally
-  if state = error then begin
-    Form1.Memo1.lines.add('ERROR: Zeile nicht auswertbar: ' + Line);
-    state:= corrupt;
-  end;
-  Analysis := pos('</svg>',Line) > 0                // Analyse ist abgeschlossen
-end;
-
 end;
 
 function TSvg.Valid:boolean;
 begin
   if (state = incomplete) and
        ((pen[0] > 0) or
+        (PenOverride > 0) or
         (Self.ClassType = TSvgGroup) or
-        (Self.ClassType = TSvgGroup)) and                               // Stift muss gesetzt werden
+        (Self.ClassType = TSvgGroup)) and           // Stift muss gesetzt werden
      (Hmm <> MAXDOUBLE) and            // Seitenhöhe in [mm] muss gesetzt werden
      (Hpx <> MAXDOUBLE) then           // Seitenhöhe in [px] muss gesetzt werden
     state:= complete;
@@ -785,76 +789,72 @@ var i, j, n, p      : integer;
     ch              : char;
     a, b, c, d, e, f: double;
 begin
-  Analysis := false;                         // letzte Zeile noch nicht erreicht
+                   // letzte Zeile des Elements gefunden?, Analyse abgeschlossen
+  Analysis := pos('</g>',Line) > 0;
+
   if state <> incomplete then exit;
 
-try
-  if pos('style="',Line) > 0 then begin
-    state  := incomplete;
-    i:= pos('stroke:#', Line) + 8;                      // Linienfarbe ermitteln
-    j:= pos('fill:#', Line) + 6;                           // Füllung? ermitteln
-    if (i > 8) or (j > 6)  then
-    begin
+  try
+    if pos('style="',Line) > 0 then begin
+      i:= pos('stroke:#', Line) + 8;                    // Linienfarbe ermitteln
+      j:= pos('fill:#', Line) + 6;                         // Füllung? ermitteln
+      if (i > 8) or (j > 6)  then
+      begin
 
-      if j > i then i := j;                          // nur fill wurde angegeben
-      s := '';                                         // gültige Zeichen suchen
-      while CharInSet(Line[i], ['0'..'9','.','+','-','A'..'z']) and
-            (i<=length(Line)) do begin
-        s := s + upcase(Line[i]);
-        inc(i);
-      end;
+        if j > i then i := j;                        // nur fill wurde angegeben
+        s := '';                                       // gültige Zeichen suchen
+        while CharInSet(Line[i], ['0'..'9','.','+','-','A'..'z']) and
+              (i<=length(Line)) do begin
+          s := s + upcase(Line[i]);
+          inc(i);
+        end;
 
-      n:=0;
-      for p:=0 to 9 do begin
-        color:= IntToHex(int64(job.pens[p].color),6);
-        ch:= color[1]; color[1]:= color[5]; color[5]:= ch;
-        ch:= color[2]; color[2]:= color[6]; color[6]:= ch;
-        if s = color then begin
-          inc(n);
-          pen[0]:= n;
-          pen[n]:= p;
+        n:=0;
+        for p:=0 to 9 do begin
+          color:= IntToHex(int64(job.pens[p].color),6);
+          ch:= color[1]; color[1]:= color[5]; color[5]:= ch;
+          ch:= color[2]; color[2]:= color[6]; color[6]:= ch;
+          if s = color then begin
+            inc(n);
+            pen[0]:= n;
+            pen[n]:= p;
+          end;
         end;
       end;
+
+      filled := pos('fill:#',Line) <> 0;              // Objekt mit Hintergrund?
     end;
 
-    filled := pos('fill:#',Line) <> 0;                // Objekt mit Hintergrund?
+    if Find('transform="translate(',Line,i) then begin
+      if ParseLine(i, Line, e, s) <> p_number then exit; inc(i);
+      if ParseLine(i, Line, f, s) <> p_number then f := 0;
+      M.Product(TMatrix33.Create(1,0,e,   0,1,f,   0,0,1));
+    end;
+
+    if Find('transform="scale(',Line,i) then begin      // Streckung - untested!
+      if ParseLine(i, Line, a, s) <> p_number then exit; inc(i);
+      if ParseLine(i, Line, d, s) <> p_number then d:= a;
+      M.Product(TMatrix33.Create(a,0,0,   0,d,0,   0,0,1));
+    end;
+
+    if Find('transform="matrix(',Line,i) then begin                    // Matrix
+      if ParseLine(i, Line, a, s) <> p_number then exit; inc(i);
+      if ParseLine(i, Line, b, s) <> p_number then exit; inc(i);
+      if ParseLine(i, Line, c, s) <> p_number then exit; inc(i);
+      if ParseLine(i, Line, d, s) <> p_number then exit; inc(i);
+      if ParseLine(i, Line, e, s) <> p_number then exit; inc(i);
+      if ParseLine(i, Line, f, s) <> p_number then exit;
+      M.Product(TMatrix33.Create(a,c,e,   b,d,f,   0,0,1));
+    end;
+
+    state:= incomplete;
+
+  finally
+    if state = error then begin
+      Form1.ReportInfo('Zeile nicht auswertbar: ' + Line);
+      state:= corrupt;
+    end;
   end;
-
-  if Find('transform="translate(',Line,i) then begin
-    if ParseLine(i, Line, e, s) <> p_number then exit; inc(i);
-    if ParseLine(i, Line, f, s) <> p_number then f := 0;
-    M.Product(TMatrix33.Create(1,0,e,   0,1,f,   0,0,1));
-  end;
-
-  if Find('transform="scale(',Line,i) then begin        // Streckung - untested!
-    if ParseLine(i, Line, a, s) <> p_number then exit; inc(i);
-    if ParseLine(i, Line, d, s) <> p_number then d:= a;
-    M.Product(TMatrix33.Create(a,0,0,   0,d,0,   0,0,1));
-  end;
-
-  if Find('transform="matrix(',Line,i) then begin                      // Matrix
-    if ParseLine(i, Line, a, s) <> p_number then exit; inc(i);
-    if ParseLine(i, Line, b, s) <> p_number then exit; inc(i);
-    if ParseLine(i, Line, c, s) <> p_number then exit; inc(i);
-    if ParseLine(i, Line, d, s) <> p_number then exit; inc(i);
-    if ParseLine(i, Line, e, s) <> p_number then exit; inc(i);
-    if ParseLine(i, Line, f, s) <> p_number then exit;
-    M.Product(TMatrix33.Create(a,c,e,   b,d,f,   0,0,1));
-  end;
-
-  state:= incomplete;
-
-finally
-  if state = error then begin
-    Form1.Memo1.lines.add('ERROR: Zeile nicht auswertbar: ' + Line);
-    state:= corrupt;
-  end;
-//  i := pos('</g>',Line);
-//  if i > 0 then
-//     i:= i;
-  Analysis := pos('</g>',Line) > 0
-end;
-
 end;
 
 ///// Class TsvgPath ///////////////////////////////////////////////////////////
@@ -1268,41 +1268,75 @@ end;
 function TSvgRect.Analysis(const Line: string):boolean;
 var i: integer;
     s: string;
-//    L0: string;
 begin
+{  inherited Analysis(Line);
+
+  while state = incomplete do           // this loop will pass only one times!!!
+    try
+      if Find('width="', Line, i) then
+        if ParseLine(i, Line, Width, s) <> p_number then break;// Breite in [px]
+
+      if Find('height="', Line, i) then
+        if ParseLine(i, Line, Height, s) <> p_number then break; // Höhe in [px]
+
+      if Find('x="', Line, i) then
+        if ParseLine(i, Line, X, s) <> p_number then break;     // Links in [px]
+
+      if Find('y="', Line, i) then
+        if ParseLine(i, Line, Y, s) <> p_number then break;      // Oben in [px]
+
+      if Find('rx="', Line, i) then
+        if ParseLine(i, Line, Rx, s) <> p_number then break; // X-Radius in [px]
+
+      if Find('ry="', Line, i) then
+        if ParseLine(i, Line, Ry, s) <> p_number then break; // Y-Radius in [px]
+
+      state := incomplete;
+      break;                                     // abort the loop after finally
+
+    finally
+      if state = error then begin
+        Form1.ReportInfo('Zeile nicht auswertbar: ' + Line);
+        state:= corrupt;
+      end;
+    end;
+
+  Analysis := pos('/>',Line) > 0                    // Analyse ist abgeschlossen
+}
   inherited Analysis(Line);
 
-  Analysis := false;
+                   // letzte Zeile des Elements gefunden?, Analyse abgeschlossen
+  Analysis := pos('/>',Line) > 0;
+
   if state <> incomplete then exit;
-try
-  if Find('width="', Line, i) then
-    if ParseLine(i, Line, Width, s) <> p_number then exit;     // Breite in [px]
 
-  if Find('height="', Line, i) then
-    if ParseLine(i, Line, Height, s) <> p_number then exit;      // Höhe in [px]
+  try
+    if Find('width="', Line, i) then
+      if ParseLine(i, Line, Width, s) <> p_number then exit;   // Breite in [px]
 
-  if Find('x="', Line, i) then
-    if ParseLine(i, Line, X, s) <> p_number then exit;          // Links in [px]
+    if Find('height="', Line, i) then
+      if ParseLine(i, Line, Height, s) <> p_number then exit;    // Höhe in [px]
 
-  if Find('y="', Line, i) then
-    if ParseLine(i, Line, Y, s) <> p_number then exit;           // Oben in [px]
+    if Find('x="', Line, i) then
+      if ParseLine(i, Line, X, s) <> p_number then exit;        // Links in [px]
 
-  if Find('rx="', Line, i) then
-    if ParseLine(i, Line, Rx, s) <> p_number then exit;      // X-Radius in [px]
+    if Find('y="', Line, i) then
+      if ParseLine(i, Line, Y, s) <> p_number then exit;         // Oben in [px]
 
-  if Find('ry="', Line, i) then
-    if ParseLine(i, Line, Ry, s) <> p_number then exit;      // Y-Radius in [px]
+    if Find('rx="', Line, i) then
+      if ParseLine(i, Line, Rx, s) <> p_number then exit;    // X-Radius in [px]
 
-  state := incomplete;
+    if Find('ry="', Line, i) then
+      if ParseLine(i, Line, Ry, s) <> p_number then exit;    // Y-Radius in [px]
 
-finally
-  if state = error then begin
-    Form1.Memo1.lines.add('ERROR: Zeile nicht auswertbar: ' + Line);
-    state:= corrupt;
+    state := incomplete;
+
+  finally
+    if state = error then begin
+      Form1.ReportInfo('Zeile nicht auswertbar: ' + Line);
+      state:= corrupt;
+    end;
   end;
-  Analysis := pos('/>',Line) > 0                    // Analyse ist abgeschlossen
-end;
-
 end;
 
 function TSvgRect.Valid:boolean;
@@ -1384,32 +1418,32 @@ var i: integer;
     s: string;
 begin
   inherited Analysis(Line);
+                   // letzte Zeile des Elements gefunden?, Analyse abgeschlossen
+  Analysis := pos('/>',Line) > 0;                   // Analyse ist abgeschlossen
 
-  Analysis := false;
   if state <> incomplete then exit;
-try
-  if Find('cx="', Line, i) then
-    if ParseLine(i, Line, cx, s) <> p_number then exit;     // Zentrum.x in [px]
 
-  if Find('cy="', Line, i) then
-    if ParseLine(i, Line, cy, s) <> p_number then exit;     // Zentrum.y in [px]
+  try
+    if Find('cx="', Line, i) then
+      if ParseLine(i, Line, cx, s) <> p_number then exit;   // Zentrum.x in [px]
 
-  if Find('rx="', Line, i) then
-    if ParseLine(i, Line, rx, s) <> p_number then exit;      // Radius.x in [px]
+    if Find('cy="', Line, i) then
+      if ParseLine(i, Line, cy, s) <> p_number then exit;   // Zentrum.y in [px]
 
-  if Find('ry="', Line, i) then
-    if ParseLine(i, Line, ry, s) <> p_number then exit;      // Radius.y in [px]
+    if Find('rx="', Line, i) then
+      if ParseLine(i, Line, rx, s) <> p_number then exit;    // Radius.x in [px]
 
-  state := incomplete;
+    if Find('ry="', Line, i) then
+      if ParseLine(i, Line, ry, s) <> p_number then exit;    // Radius.y in [px]
 
-finally
-  if state = error then begin
-    Form1.Memo1.lines.add('ERROR: Zeile nicht auswertbar: ' + Line);
-    state:= corrupt;
+    state := incomplete;
+
+  finally
+    if state = error then begin
+      Form1.ReportInfo('Zeile nicht auswertbar: ' + Line);
+      state:= corrupt;
+    end;
   end;
-  Analysis := pos('/>',Line) > 0                       // Analyse ist abgeschlossen
-end;
-
 end;
 
 function TSvgEllipse.Valid:boolean;
@@ -1467,8 +1501,9 @@ var i, Tool: integer;
     s      : string;
 begin
   inherited Analysis(Line);
+                   // letzte Zeile des Elements gefunden?, Analyse abgeschlossen
+  result := pos('/>',Line) > 0;                     // Analyse ist abgeschlossen
 
-  Analysis := false;
   if state <> incomplete then exit;
 
   try
@@ -1485,11 +1520,9 @@ begin
 
   finally
     if state = error then begin
-      Form1.Memo1.lines.add('ERROR: Zeile nicht auswertbar: ' + Line);
+      Form1.ReportInfo('Zeile nicht auswertbar: ' + Line);
       state:= corrupt;
     end;
-
-    result := pos('/>',Line) > 0;                   // Analyse ist abgeschlossen
 
     if result and filled                             // Loch soll gebohrt werden
     then begin
@@ -1503,7 +1536,7 @@ begin
 
       if Tool > c_numOfPens then begin               // ==> kein Platz mehr frei
         state:= corrupt;
-        Form1.Memo1.lines.add('ERROR: Zu wenige Tools!');
+        Form1.ReportInfo('Zu wenige Tools!');
       end else begin
         pen[0]:= 1;
         pen[pen[0]]:= Tool;         // Werkzeug neu setzen, Farbe wird ignoriert
@@ -1586,32 +1619,101 @@ end;
 ///// Load SVG-Files ///////////////////////////////////////////////////////////
 procedure svg_fileload(my_name:String; fileID, penOverride: Integer);
 var
-  my_ReadFile : TextFile;
   s           : string;
   SVG, SVGtemp: TSvg;
-  z, i, j, n  : integer;
+  i, j, n     : integer;
+  P0x, P0y    : double;
+  P1x, P1y    : double;
+
+  ///// File/Data-Handling /////////////////////////////////////////////////////
+  Lsvg        : integer;                  // length of the instant mail SVG data
+  z           : integer;                                          // line number
+  my_ReadFile : TextFile;                             // file to read a SVG file
+
+  function SvgOpen:boolean;                                   // open SVG source
+  begin
+    result:= true;
+    if pos('[', my_name) > 0 then begin                         // internal data
+      if pos('Line',   my_name) > 0 then Lsvg:= SVGdataLineLength else
+      if pos('Rect',   my_name) > 0 then Lsvg:= SVGdataRectLength else
+      if pos('Circle', my_name) > 0 then Lsvg:= SVGdataCircleLength
+      else result:= false;
+    end else begin                                                   // SVG file
+      FileMode := fmOpenRead;
+      AssignFile(my_ReadFile, my_name);
+      Reset(my_ReadFile);
+      result:= not Eof(my_ReadFile);
+    end;
+    z:= 0;
+  end;
+
+  procedure InsertParameter(const old: string; const new: double; var s: string);
+  var i, j: integer;
+      a:    double;
+      s2:   string;
+  begin
+    i:= pos(old, s);
+    while i > 0 do begin
+      s2:= floattostr(new);
+      j:= pos(',', s2);
+      if j > 0 then begin
+        delete(s2,j,1);
+        insert('.',s2,j);
+      end;
+
+      delete(s,i,length(old));
+      insert(s2,s,i);
+      i:= pos(old, s);
+    end;
+  end;
+
+  function SvgGetLine(var s: string):boolean;     // read one line of SVG source
+  begin
+    result:= true;
+    inc(z);
+    if pos('[', my_name) > 0 then begin                        // internal data?
+      if z > Lsvg then result:= false
+      else begin
+        result:= false;
+        if pos('Line', my_name) > 0 then s:= SVGdataLine[z] else
+        if pos('Rect', my_name) > 0 then s:= SVGdataRect[z] else
+        if pos('Circle', my_name) > 0 then s:= SVGdataCircle[z] else exit;
+        result:= true;
+        with FileParamArray[fileID] do begin
+          InsertParameter('{{P0.X}}',       P0.X, s);
+          InsertParameter('{{P0.Y}}', 297 - P0.Y, s);
+          InsertParameter('{{P1.X}}',       P1.X, s);
+          InsertParameter('{{P1.Y}}', 297 - P1.Y, s);
+          InsertParameter('{{D}}', sqrt( (P1.x-P0.x)*(P1.x-P0.x) + (P1.y-P0.y)*(P1.y-P0.y) ), s);
+        end;
+      end;
+    end else begin                                                   // SVG file
+      Readln(my_ReadFile, s);
+      result:= not Eof(my_ReadFile);
+    end;
+  end;
+
+  procedure SvgClose;                                        // close SVG source
+  begin                                              // only necessary for files
+    if pos('[', my_name) = 0 then CloseFile(my_ReadFile);
+  end;
+
+  ///// svg-fileload ///////////////////////////////////////////////////////////
 begin
-  if not FileExists(my_name) then begin
+  if not SvgOpen then begin
     FileParamArray[fileID].valid := false;
     exit;
   end;
 
   reset_filebounds(fileID);
-  s := '';
   SVG := nil;
-  z:= 1;
 
-  FileMode := fmOpenRead;
-  AssignFile(my_ReadFile, my_name);
-  Reset(my_ReadFile);
-
-  Readln(my_ReadFile, s);
-  while not Eof(my_ReadFile) do begin
+  while SvgGetLine(s) do begin
             // ==> neues SVG-Element anlegen und Daten aus bisherigem übernehmen
     if pos('<svg', s)     > 0 then
        if SVG = nil then SVG := TSvg.Create(nil, fileID, penOverride)
        else begin
-         Form1.Memo1.lines.add('ERROR (Zeile ' + inttostr(z) + '): Unerwartetes SVG-Element!');
+         Form1.ReportError('Zeile ' + inttostr(z) + ': Unerwartetes SVG-Element!');
          exit;
        end;
 
@@ -1619,42 +1721,44 @@ begin
        if ((SVG.ClassType = TSvg) or (SVG.ClassType = TSvgGroup))
           then SVG:= TSvgGroup.Create(SVG)
           else begin
-             Form1.Memo1.lines.add('ERROR (Zeile ' + inttostr(z) + '): Unerwartetes Group-Element!');
+             Form1.ReportError('Zeile ' + inttostr(z) + ': Unerwartetes Group-Element!');
              exit;
           end;
 
     if pos('<path', s)    > 0 then
        if (SVG.ClassType = TSvgGroup) then SVG:= TSvgPath.Create(SVG)
           else begin
-             Form1.Memo1.lines.add('ERROR (Zeile ' + inttostr(z) + '): Unerwartetes Path-Element!');
+             Form1.ReportError('(eile ' + inttostr(z) + ': Unerwartetes Path-Element!');
              exit;
           end;
 
     if pos('<rect', s)    > 0 then
        if (SVG.ClassType = TSvgGroup) then SVG:= TSvgRect.Create(SVG)
           else begin
-             Form1.Memo1.lines.add('ERROR (Zeile ' + inttostr(z) + '): Unerwartetes Rect-Element!');
+             Form1.ReportError('Zeile ' + inttostr(z) + ': Unerwartetes Rect-Element!');
              exit;
           end;
 
     if pos('<ellipse', s) > 0 then
        if (SVG.ClassType = TSvgGroup) then SVG:= TSvgEllipse.Create(SVG)
           else begin
-             Form1.Memo1.lines.add('ERROR (Zeile ' + inttostr(z) + '): Unerwartetes Ellipse-Element!');
+             Form1.ReportError('Zeile ' + inttostr(z) + ': Unerwartetes Ellipse-Element!');
              exit;
           end;
 
     if pos('<circle', s)  > 0 then
        if (SVG.ClassType = TSvgGroup) then SVG:= TSvgCircle.Create(SVG)
           else begin
-             Form1.Memo1.lines.add('ERROR (Zeile ' + inttostr(z) + '): Unerwartetes Circle-Element!');
+             Form1.ReportError('Zeile ' + inttostr(z) + ': Unerwartetes Circle-Element!');
              exit;
           end;
 
     if SVG <> nil then begin
       if SVG.Analysis(s) then begin
-        if not SVG.valid then Form1.Memo1.lines.add('ERROR (Zeile ' + inttostr(z) + '): Element nicht korrekt!')
-        else begin
+        if not SVG.valid then begin
+          if job.firstLoad[FileId] then
+            Form1.ReportError('Element in Zeile ' + inttostr(z) + ' nicht korrekt!')
+        end else begin
           n:= SVG.pen[0];
           for i:=1 to n do begin
             SVG.Draw;                                          // draw first pen
@@ -1672,11 +1776,9 @@ begin
         end;
       end;
     end;
-    Readln(my_ReadFile, s);
-    z:= z+1;
   end;
 
-  CloseFile(my_ReadFile);
+  SvgClose;
 
   CurrentPen:= 0;
   LastAction:= lift;
@@ -1685,7 +1787,8 @@ begin
   FileParamArray[fileID].valid := true;
   file_Rotate_Mirror_Scale_Offset(fileID, true);                  // Auto-close!
   block_scale_file(fileID);
-end;
+  job.firstLoad[FileId]:= false;
+end;
 
 // #############################################################################
 // GCode 2D Import, berücksichtigt kein Z bzw. nur über/unter Null

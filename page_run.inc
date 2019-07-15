@@ -209,7 +209,7 @@ begin
       if CompareValue(my_zval1, my_zval2, 0.1) = 0 then
         result:= my_zval2
       else
-        Form1.Memo1.lines.add('ERROR: Probe contact failure - exceed tolerance');
+        Form1.ReportError('Probe contact failure - exceed tolerance');
 
     finally
       if MachineState = alarm then begin
@@ -510,9 +510,7 @@ begin
     if isSimActive then
       ResetSimulation;
     if ToolInSpindle <> 1 then begin
-      PlaySound('SYSTEMHAND', 0, SND_ASYNC);
-      Memo1.lines.add('');
-      Memo1.lines.add('ERROR: Tool 1 is not in spindle.');
+      ReportError('Tool 1 is not in spindle.');
       exit;
     end;
 

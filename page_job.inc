@@ -56,7 +56,8 @@ begin
     Form1.Memo1.lines.add('All mill paths will be rebuild and enabled!');
 
     CallPcb2Gcode(FileParamArray[i].gbr_name,
-                            FileParamArray[i].gbr_mirror,
+                            false,
+//                            FileParamArray[i].gbr_mirror,
                             FileParamArray[i].gbr_inflate,
                             '500');
   end;
@@ -84,17 +85,25 @@ begin
       if length(my_path) < 3 then    // empty fields contains a space character,
         continue;                    // but at least an extesion is necessary
 
-      if not FileExists(my_path) then begin
-        Form1.Memo1.lines.add('ERROR: File not found (' + my_path + ')!');
-        MessageDlg('ERROR: File not found (' + my_path + ')!', mtConfirmation, [mbCancel],0);
-        continue;
+      if pos('[',Cells[0,i]) <> 0 then begin                 // instant mill?
+        if pos('Line',Cells[0,i])   = 1 then my_ext:= 'line' else
+        if pos('Rect',Cells[0,i])   = 1 then my_ext:= 'rect' else
+        if pos('Circle',Cells[0,i]) = 1 then my_ext:= 'circle' else begin
+          Form1.ReportError('Unkown instant mill object in row ' + inttostr(i) + '!');
+          continue;
+        end;
+      end else begin
+        if not FileExists(my_path) then begin
+          Form1.ReportError('File not found (' + my_path + ')!');
+          continue;
+        end;
+        my_ext:= AnsiUpperCase(ExtractFileExt(my_path));
+        if my_ext = '' then begin
+          Form1.ReportError('No Extension (' + my_path + ')!');
+          continue;
+        end;
       end;
 
-      my_ext:= AnsiUpperCase(ExtractFileExt(my_path));
-      if my_ext = '' then begin
-        Form1.Memo1.lines.add('ERROR: No Extension (' + my_path + ')!');
-        continue;
-      end;
 
       if Cells[6, i] = '90°' then
         FileParamArray[i-1].rotate:= deg90
@@ -141,7 +150,16 @@ begin
         SetPCBmillTool(9);
       end else if (my_ext = '.SVG') then begin
         Cells[9, i]:= 'SVG'; // Remark
-        svg_fileload(my_path, i-1, -1);
+        svg_fileload(my_path, i-1, pen_override);
+      end else if (my_ext = 'line') then begin
+        Cells[9, i]:= 'Line'; // Remark
+        svg_fileload(my_path, i-1, pen_override);
+      end else if (my_ext = 'rect') then begin
+        Cells[9, i]:= 'Rect'; // Remark
+        svg_fileload(my_path, i-1, pen_override);
+      end else if (my_ext = 'circle') then begin
+        Cells[9, i]:= 'Circle'; // Remark
+        svg_fileload(my_path, i-1, pen_override);
       end else
         Form1.Memo1.lines.add('Unknown File Extension:' + ExtractFileName(my_path));
       FileParamArray[i-1].penoverride:= pen_override;
@@ -297,8 +315,10 @@ var i: integer;
           Cells[7,i]:= Ini.ReadString(Section, 'Mirror',  Cells[7,i]);
           Cells[9,i]:= Ini.ReadString(Section, 'Remark',  Cells[8,i]);
           FileParamArray[i].gbr_name:=               Ini.ReadString(Section,'GbrName',              FileParamArray[i].gbr_name);
-          FileParamArray[i].gbr_mirror:=  StrToBool (Ini.ReadString(Section,'GbrMirror', BoolToStr (FileParamArray[i].gbr_mirror)));
+//          FileParamArray[i].gbr_mirror:=  StrToBool (Ini.ReadString(Section,'GbrMirror', BoolToStr (FileParamArray[i].gbr_mirror)));
           FileParamArray[i].gbr_inflate:= StrToFloat(Ini.ReadString(Section,'GbrInflate',FloatToStr(FileParamArray[i].gbr_inflate)));
+          FileParamArray[i].gbr_dim_dia:= StrToFloat(Ini.ReadString(Section,'GbrDimDia',FloatToStr(FileParamArray[i].gbr_dim_dia)));
+          FileParamArray[i].gbr_ZCycle:=  StrToFloat(Ini.ReadString(Section,'GbrZCycle',FloatToStr(FileParamArray[i].gbr_ZCycle)));
         end;
         Repaint;
         OpenFilesInGrid;
@@ -417,8 +437,10 @@ begin
       Ini.WriteString(Section, 'Mirror',    Form1.SgFiles.Cells[7,i]);
       Ini.WriteString(Section, 'Remark',    Form1.SgFiles.Cells[9,i]);
       Ini.WriteString(Section, 'GbrName',              FileParamArray[i].gbr_name);
-      Ini.WriteString(Section, 'GbrMirror', BoolToStr (FileParamArray[i].gbr_mirror));
+//gbr      Ini.WriteString(Section, 'GbrMirror', BoolToStr (FileParamArray[i].gbr_mirror));
       Ini.WriteString(Section, 'GbrInflate',FloatToStr(FileParamArray[i].gbr_inflate));
+      Ini.WriteString(Section, 'GbrDimDia', FloatToStr(FileParamArray[i].gbr_dim_dia));
+      Ini.WriteString(Section, 'GbrZCycle', FloatToStr(FileParamArray[i].gbr_ZCycle));
     end;
 
     for i:=1 to Form1.SgPens.Rowcount-1 do begin                   // pens table
@@ -539,7 +561,6 @@ var
   aStr: String;
 
 begin
-//  Rect.Left:= Rect.Left-4; // Workaround für XE8-Darstellung
   aStr:= SgJobDefaults.Cells[ACol, ARow];
   if aRow = 0 then
     with SgJobDefaults,Canvas do begin
@@ -616,34 +637,6 @@ procedure TForm1.SgAppDefaultsDrawCell(Sender: TObject; ACol, ARow: Integer;
 var aRect: TRect;
     aStr:  String;
 begin
-{  aStr:= SgAppDefaults.Cells[ACol, ARow];
-  if aRow = 0 then with SgAppDefaults,Canvas do begin
-    Font.Style := [fsBold];
-    TextRect(Rect, Rect.Left + 2, Rect.Top + 2, aStr);
-  end else with SgAppDefaults,Canvas do begin
-    Pen.Color := cl3Dlight;
-    Font.Color:=clblack;
-    if (aCol = 1) and ((aStr= 'ON') or (aStr= 'OFF')) then begin // ON, OFF
-      FrameRect(Rect);
-      inc(Rect.Left);
-      inc(Rect.Top);
-      Brush.Color := clgray;
-      FrameRect(Rect);
-      Brush.Color := cl3Dlight;
-      InflateRect(Rect, -1, -1);
-      Font.Color := clblack;
-      if aStr = 'ON' then
-        Font.Style := [fsBold]
-      else
-        Font.Style := [];
-      aRect := Rect;
-      FillRect(Rect);
-      aStr:= Cells[ACol, ARow];
-      aRect.Top := aRect.Top + 1; // adjust top to center vertical
-      DrawText(Canvas.Handle, PChar(aStr), Length(aStr), aRect, DT_CENTER);
-    end;
-  end;
-}
   with SgAppDefaults,Canvas do begin
     aStr:= Cells[ACol, ARow];
     if aRow = 0 then begin
@@ -814,7 +807,7 @@ begin
   if Key in [#10, #13, #27] then SgFilesExit(Sender);
 end;
 
-procedure TForm1.ComboBox1Exit(Sender: TObject);
+procedure TForm1.ComboBoxPenExit(Sender: TObject);
 begin
   with (sender as TComboBox),SgFiles do begin
     TComboBox(sender).hide;
@@ -830,12 +823,93 @@ begin
   end;
 end;
 
+procedure TForm1.ComboBoxInputExit(Sender: TObject);
+var my_ext: String;
+begin
+  with (sender as TComboBox),SgFiles do begin
+    TComboBox(sender).hide;
+    Options:= Options - [goEditing, goAlwaysShowEditor];
+    if (ItemIndex >= 0) then begin
+      if (Row > 0) and (Col= 0) then begin
+        case ItemIndex of
+          0: begin                                                  // Load File
+               UnHilite;
+               Cells[0, Row]:= '';;                      // delete old file name
+               OpenFileDialog.FilterIndex:= 0;
+               if OpenFileDialog.Execute then begin
+                 Cells[0, Row]:= OpenFileDialog.Filename;
+                 job.fileDelimStrings[Row-1]:= ShortString(Rows[Row].DelimitedText);
+                 job.firstLoad[Row-1]:= true;
+                 UnHilite;
+                 my_ext:= AnsiUpperCase(ExtractFileExt(OpenFileDialog.Filename));
+                 if (my_ext = '.GBR') or (my_ext = '.GBL') or (my_ext = '.GTL') then begin
+                   ClearFile(Row-1);                       // clear old parameters
+                   FormGerber.GerberFileNumber:= Row;          // set new file name
+                   FileParamArray[Row].gbr_name:= OpenFileDialog.Filename;
+                   FormGerber.ShowModal;
+                 end else
+                   OpenFilesInGrid;
+               end;
+             end;
+          1: begin                                                       // Line
+               UnHilite;
+               with FormAssistLine do begin
+                 if trim(Cells[0, Row]) = '' then
+                   with FileParamArray[Row-1] do begin
+                     P0.x:=0;   P0.y:= 0;
+                     P1.x:=100; P1.y:= 0;
+                   end;
+                 if FormAssistLine.ShowModal(Row) = mrOK then begin
+                   Cells[0, Row]:= FormAssistLine.GetId;
+                   Cells[1, Row]:= inttostr(Row+1);
+                   OpenFilesInGrid;
+                 end;
+               end;
+             end;
+          2: begin                                                  // Rectangle
+               UnHilite;
+               with FormAssistRect do begin
+                 if trim(Cells[0, Row]) = '' then
+                   with FileParamArray[Row-1] do begin
+                     P0.x:=0;   P0.y:= 0;
+                     P1.x:=100; P1.y:= 100;
+                   end;
+                 if FormAssistRect.ShowModal(Row) = mrOK then begin
+                   Cells[0, Row]:= FormAssistRect.GetId;
+                   Cells[1, Row]:= inttostr(Row+1);
+                   OpenFilesInGrid;
+                 end;
+               end;
+             end;
+          3: begin                                                     // Circle
+               UnHilite;
+               with FormAssistCircle do begin
+                 if trim(Cells[0, Row]) = '' then
+                   with FileParamArray[Row-1] do begin
+                     P0.x:=50;   P0.y:= 50;
+                     P1.x:=100; P1.y:= 100;
+                   end;
+                 if FormAssistCircle.ShowModal(Row) = mrOK then begin
+                   Cells[0, Row]:= FormAssistCircle.GetId;
+                   Cells[1, Row]:= inttostr(Row+1);
+                   OpenFilesInGrid;
+                 end;
+               end;
+             end;
+          4: begin                                                      // Abort
+                                                                   // do nothing
+             end;
+        end;
+      end;
+    end;
+  end
+end;
+
 procedure TForm1.SgFilesSelectCell(Sender: TObject; ACol, ARow: Integer;
   var CanSelect: Boolean);
 var R:      TRect;
     org:    TPoint;
     i:      Integer;
-    my_ext: String;
 begin
   with SgFiles do begin                      // right col is for hide focus only
     if ACol = ColCount-1 then begin CanSelect:= false; exit end;
@@ -843,31 +917,52 @@ begin
 //    if (ACol < 1) then exit;
     case ACol of
       0:
-        begin
-          UnHilite;
-          OpenFileDialog.FilterIndex:= 0;
-          if OpenFileDialog.Execute then begin
-            Cells[0, ARow]:= OpenFileDialog.Filename;
-            job.fileDelimStrings[ARow-1]:= ShortString(Rows[ARow].DelimitedText);
-            UnHilite;
-            my_ext:= AnsiUpperCase(ExtractFileExt(OpenFileDialog.Filename));
-            if (my_ext = '.GBR') or (my_ext = '.GBL') or (my_ext = '.GTL') then begin
-              sgFiles.Cells[0, ARow]:= '';
-              ConvertedFileName:='';
-              GerberFileName:= OpenFileDialog.Filename;
-              GerberFileNumber:= ARow;
+        begin                                             // prove type of input
+          if pos('[',Cells[0,ARow]) <> 0 then begin         // edit instant mill
+            if pos('Line',Cells[0,Row]) = 1 then                        // Line?
+              if FormAssistLine.ShowModal(ARow) = mrOK then
+                Cells[0, ARow]:= FormAssistLine.GetId
+            else if pos('Rect',Cells[0,Row]) = 1 then              // rectangle?
+              if FormAssistRect.ShowModal(ARow) = mrOK then
+                Cells[0, ARow]:= FormAssistRect.GetId
+            else if pos('Circle',Cells[0,Row]) = 1 then               // circle?
+              if FormAssistCircle.ShowModal(ARow) = mrOK then
+                Cells[0, ARow]:= FormAssistCircle.GetId
+            else exit;                                        // element unknown
+            OpenFilesInGrid;                                             // open
+          end else begin
+            if AnsiUpperCase(ExtractFileExt(Cells[0, ARow])) = '.NCB' then begin
+              FormGerber.GerberFileNumber:= ARow;           // PCB file: do edit
               FormGerber.ShowModal;
-            end else
-              OpenFilesInGrid;
+            end else begin                             // "normal" File or empty
+              R := SgFiles.CellRect(ACol, ARow);
+              org := self.ScreenToClient(self.ClientToScreen(R.TopLeft));
+              perform( WM_CANCELMODE, 0, 0 ); // verhindert Mausaktion in Stringgrid
+              with ComboBoxInput do begin
+                SetBounds(org.X + SgFiles.Left + 2,
+                          org.Y + SgFiles.Top,
+                          R.Right-R.Left,
+                          Form1.Height);
+                ItemIndex:= 0;
+                Show;
+                BringToFront;
+                SetFocus;
+                DroppedDown := true;
+              end;
+            end;
           end;
         end;
       1:
         begin
           R := SgFiles.CellRect(ACol, ARow);
-          org := self.ScreenToClient(self.ClientToScreen(R.TopLeft));
+//          org := self.ScreenToClient(self.ClientToScreen(R.TopLeft));
+          org:= R.TopLeft;
           perform( WM_CANCELMODE, 0, 0 ); // verhindert Mausaktion in Stringgrid
-          with ComboBox1 do begin
-            SetBounds(org.X-10, org.Y-2, R.Right-R.Left+10, Form1.Height);
+          with ComboBoxPen do begin
+            SetBounds(org.X + SgFiles.Left + 2 - 10,
+                      org.Y + SgFiles.Top - 2,
+                      R.Right-R.Left+10,
+                      Form1.Height);
             ItemIndex := Items.IndexOf('Pen '+SgFiles.Cells[ACol, ARow]);
             if SgFiles.Cells[ACol, ARow] = '-1' then ItemIndex:= 0;
             if SgFiles.Cells[ACol, ARow] = '10' then ItemIndex:= 11;

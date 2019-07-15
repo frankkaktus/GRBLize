@@ -39,6 +39,7 @@ type
     pu_outside: TMenuItem;
     pu_pocket: TMenuItem;
     Drill1: TMenuItem;
+    CheckBoxHilite: TCheckBox;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure pu_moveCamToCenterClick(Sender: TObject);
     procedure BtnZoomResetClick(Sender: TObject);
@@ -169,8 +170,8 @@ begin
     my_bounds:= final_array[f].bounds; // Bounds im Path #
 
     my_offset:= job.pens[final_array[f].pen].offset;
-    my_offset.x:= my_offset.x + job.global_offset.x;
-    my_offset.y:= my_offset.y + job.global_offset.y;
+//    my_offset.x:= my_offset.x + job.global_offset.x;
+//    my_offset.y:= my_offset.y + job.global_offset.y;
 
     for p:= 0 to length(final_array[f].hilites)-1 do // hilite-# im Block (Childs)
       for i:= 0 to length(final_array[f].hilites[p])-1 do begin       // Hilites
@@ -501,6 +502,19 @@ begin
                 my_line_color, my_fill_color2, my_fill_color3, my_radius);
           p1:= p2;
         end;
+        if is_highlited and
+           (HilitePath = 0) and
+           (HilitePoint >= 0) and
+           get_bm_point(my_final_entry.hilites[0], HilitePoint, p2)
+        then begin
+          Canvas.Pen.Width:= 2;
+          Canvas.Pen.Color:= clRed;
+          Canvas.ellipse(p2.x-8, p2.y-8, p2.x+8, p2.y+8);
+          Canvas.Pen.Width:= 3;
+          Canvas.Pen.Color:= clWhite;
+          Canvas.ellipse(p2.x-5, p2.y-5, p2.x+5, p2.y+5);
+          Canvas.Pen.Width:= 1;
+        end;
         if my_final_entry.enable then last_point:= p2;    // neuer letzter Punkt
       end;
       exit;                                 // keine weitere Aktion erforderlich
@@ -594,20 +608,23 @@ begin
 // -----------------------------------------------------------------------------
     my_pathcount:= length(my_final_entry.hilites);
     if my_pathcount > 0 then begin         // why hilites are in path 0 only????
-      my_pathlen:= length(my_final_entry.hilites[0]);
-      Canvas.Pen.Width := 1;
-      Canvas.Pen.Mode:= pmCopy;
-      for i:= 0 to my_pathlen - 1 do begin
-        if not get_bm_point(my_final_entry.hilites[0], i, p2) then break;
-        Canvas.Pen.Mode := pmCopy;
-        Canvas.Pen.Width:= 2;
-        Canvas.Pen.Color:= clBlue;
-        Canvas.ellipse(p2.x-8, p2.y-8, p2.x+8, p2.y+8);
-        Canvas.Pen.Width:= 3;
-        Canvas.Pen.Color:= clGray;
-        Canvas.ellipse(p2.x-5, p2.y-5, p2.x+5, p2.y+5);
-        Canvas.Pen.Width:= 1;
-      end;         // will be done seperatly to make sure Hilite is in forground
+      if Form2.CheckBoxHilite.Checked then begin
+        my_pathlen:= length(my_final_entry.hilites[0]);
+        Canvas.Pen.Width := 1;
+        Canvas.Pen.Mode:= pmCopy;
+        for i:= 0 to my_pathlen - 1 do begin
+          if not get_bm_point(my_final_entry.hilites[0], i, p2) then break;
+          Canvas.Pen.Mode := pmCopy;
+          Canvas.Pen.Width:= 2;
+          Canvas.Pen.Color:= clBlue;
+          Canvas.ellipse(p2.x-8, p2.y-8, p2.x+8, p2.y+8);
+          Canvas.Pen.Width:= 3;
+          Canvas.Pen.Color:= clGray;
+          Canvas.ellipse(p2.x-5, p2.y-5, p2.x+5, p2.y+5);
+          Canvas.Pen.Width:= 1;
+        end;
+      end;
+                   // will be done seperatly to make sure Hilite is in forground
       if is_highlited and
          (HilitePath = 0) and
          (HilitePoint >= 0) and
@@ -842,11 +859,12 @@ begin
     add_scroll_offset(po1);
     po2:= po1;
     Canvas.Pen.Color:= clwhite;
-    if length(final_Array) > 0 then
-      for j:= 0 to length(final_Array) - 1 do begin
-        draw_final_entry(final_Array[j], HiliteBlock = j, po1);
-//       Application.ProcessMessages;     // sehr langsam!
-      end;
+    if length(final_Array) > 0 then begin
+      for j:= 0 to length(final_Array) - 1 do
+        if HiliteBlock <> j then draw_final_entry(final_Array[j], false, po1);
+                                          // Hilightblock shall be drawn at last
+      if HiliteBlock >= 0 then draw_final_entry(final_Array[HiliteBlock], true, po1);
+    end;
     draw_move(po1, po2, clgray, true, false);
   end;
   if not fActivated then
@@ -1016,52 +1034,6 @@ begin
   end;
 end;
 
-{var d0: integer = 0;
-
-procedure TForm2.DrawingBoxGesture(Sender: TObject;
-  const EventInfo: TGestureEventInfo; var Handled: Boolean);
-begin
-exit;
-  if EventInfo.GestureID <> igiZoom then exit;
-  Handled:= true;
-//  WriteGrblComm(IntToHex(byte(EventInfo.Flags),2)+'  '+IntToStr(EventInfo.Distance),true);
-//  Form1.LabelInfo4.Caption:= IntToHex(byte(EventInfo.Flags),4);
-
-  if EventInfo.Flags = [gfBegin] then      Form1.LabelInfo1.Caption:= IntToStr(EventInfo.Distance)
-    else if EventInfo.Flags = [gfEnd] then Form1.LabelInfo2.Caption:= IntToStr(EventInfo.Distance)
-      else                                 Form1.LabelInfo2.Caption:= IntToStr(EventInfo.Distance);
-
-  case byte(EventInfo.Flags) of
-    1: d0:= EventInfo.Distance;      // first message of gesture, store distance
-    4: d0:= MaxInt;                                   // last message of gesture
-    else begin
-      if d0 > 0 then begin                         // handle only if d0 is valid
-        Form1.LabelInfo4.Caption:= FormatFloat('0.00',EventInfo.Distance/d0);
-      end;
-    end;
-  end;
-//    if d0 <> 0 then
-//      Form1.LabelResponse.Caption:= FormatFloat('0.00',EventInfo.Distance/d0);
-
-// TInteractiveGestureFlag = (gfBegin, gfInertia, gfEnd);
-
-  //    if not(TInteractiveGestureFlag.gfBegin in EventInfo.Flags) and
-//       not(TInteractiveGestureFlag.gfEnd in EventInfo.Flags) then begin
-//      D:= EventInfo.Distance;
-//      d:=d;
-  Form1.LabelInfo3.Caption:= IntToStr(d0);
-//      Direction := EventInfo.Distance/FLastDIstance;
-//      LScale := ZoomPanel.Scale.X * Direction;
-//      if LScale < 1 then LScale := 1;
-
-//      ZoomPanel.Scale.X := LScale;
-//      ZoomPanel.Scale.Y := LScale;
-
-//      ZoomPanel.Width := ZoomWidth * LScale;
-//      ZoomPanel.Height := ZoomHeight * LScale;
-//    FLastDIstance := EventInfo.Distance;
-end;
-}
 procedure TForm2.DrawingBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 // Select/Move mit linker Maustaste
@@ -1079,22 +1051,11 @@ begin
   if (ssRight in Shift) then begin
     pt.x := X + 15; pt.y := Y - 10;         // calculate position for Popup-Menu
     pt := DrawingBox.ClientToScreen(pt);
-{    move_enabled:= WorkZeroXdone and WorkZeroYdone;
-    pu_MoveCamToCenter.Enabled:= move_enabled;
-    pu_MoveCenter1.Enabled:= move_enabled;
-    pu_moveZero2.Enabled:= move_enabled;
-    pu_moveCamToZero2.Enabled:= move_enabled;
-    pu_moveToPoint.Enabled:= move_enabled;
-    pu_moveCamToPoint.Enabled:= move_enabled;
-}
     if (HiliteBlock >= 0) then begin
       uncheck_Popups;
       if final_array[HiliteBlock].closed then begin
         MenuItem4.Enabled:= true;
         MenuItem6.Enabled:= true;
-//      end else begin     done by uncheck_popups
-//        MenuItem4.Enabled:= false;
-//        MenuItem6.Enabled:= false;
       end;
       if (HilitePath >= 0) then begin
         if length(final_array[HiliteBlock].millings) > 1 then
@@ -1110,15 +1071,13 @@ begin
         PopupMenuPoint.Popup(pt.X, pt.Y)
       else
         PopupMenuObject.Popup(pt.X, pt.Y);
-    end else
-//      PopupMenuPart.Popup(pt.X, pt.Y);
+    end;
   end;
 end;
 
 procedure TForm2.DrawingBoxMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-//  draw_cnc_all;
   Cursor := crCross;
   mouse_start.x:= MaxInt;                                   // deactivate moving
   NeedsRedraw:= true;

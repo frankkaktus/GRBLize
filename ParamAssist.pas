@@ -27,10 +27,8 @@ type
     ComboBoxBlades: TComboBox;
     LabelRotation: TLabel;
     LabelFeed: TLabel;
-    LabelDeep: TLabel;
     ViewRotation: TLabel;
     ViewFeed: TLabel;
-    ViewDeep: TLabel;
     LabelMaterial: TLabel;
     ComboBoxMaterial: TComboBox;
     OKButton: TButton;
@@ -77,6 +75,8 @@ implementation
 
 {$R *.dfm}
 
+uses grbl_player_main;
+
 constructor TFormParamAssist.Create(AOwner: TComponent);
 var i: integer;
 begin
@@ -93,8 +93,7 @@ end;
 
 procedure TFormParamAssist.OKButtonClick(Sender: TObject);
 begin
-//  if (CombolmlllBoxComPort.ItemIndex > 0) then
-    FormParamAssist.ModalResult:= mrOK;
+  FormParamAssist.ModalResult:= mrOK;
 end;
 
 function TFormParamAssist.ShowModal(Pen: Integer):integer;
@@ -103,6 +102,7 @@ begin
   ComboBoxMaterial.ItemIndex:= job.material;
   EditDiameter.Text:=          FormatFloat('0.00',job.pens[Pen].diameter);
   ComboBoxBlades.ItemIndex:=   job.pens[Pen].Blades-1;
+
   Calculate(nil);
 
   Result:= inherited ShowModal;
@@ -122,17 +122,19 @@ var Diameter: double;
     Blades:   integer;
     D:        integer;
 begin                                    // calculation only if Visible, only in
-//  if not Visible then exit;             // this case all Input value are updated
+  if not Visible then exit;             // this case all Input value are updated
 
 ///// collect and check input values ///////////////////////////////////////////
   Material:= ComboBoxMaterial.ItemIndex;                        // read material
   if (Material < 0) or (Material >= Nmaterial) then begin
-    exit;                                                  // Fehlermeldung!!!
+    Form1.ReportError('Unsupported (' + inttostr(Material) + ')!');
+    exit;
   end;
 
   Diameter:= StrToFloatDef(EditDiameter.Text, 0);
-  if (Diameter <= 0) or (Diameter > 14) then begin
-    exit;                                                  // Fehlermeldung!!!
+  if (Diameter <= 0) or (Diameter >= 14.0001) then begin
+    Form1.ReportError('Diameter out of range (' + floattostr(Diameter) + '), expected between 0 and 14 mm!');
+    exit;
   end;
   if (Diameter < 1.5)  then D:= 1 else
   if (Diameter < 2.5)  then D:= 2 else
@@ -145,7 +147,8 @@ begin                                    // calculation only if Visible, only in
 
   Blades:= ComboBoxBlades.ItemIndex + 1;
   if (Blades <= 0) or (Blades > 4) then begin
-    exit;                                                  // Fehlermeldung!!!
+    Form1.ReportError('Number of blades out of range (' + inttostr(Blades) + '), expected between 1 and 4!');
+    exit;
   end;
 
 ///// calculation //////////////////////////////////////////////////////////////

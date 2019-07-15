@@ -3,7 +3,7 @@
         <ProjectGuid>{D019AC6E-5289-4121-AF90-0E7604D6786D}</ProjectGuid>
         <MainSource>GRBLize.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
@@ -148,6 +148,18 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="TouchButton.pas"/>
+        <DCCReference Include="AssistRect.pas">
+            <Form>FormAssistRect</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="AssistCircle.pas">
+            <Form>FormAssistCircle</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="AssistLine.pas">
+            <Form>FormAssistLine</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <None Include="drill_import.inc">
             <ContainerId>File</ContainerId>
         </None>

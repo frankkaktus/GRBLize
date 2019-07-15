@@ -80,7 +80,6 @@ type
     N7: TMenuItem;
     OpenFileDialog: TOpenDialog;
     OpenJobDialog:  TOpenDialog;
-    GerberImportDialog: TOpenDialog;
     SaveJobDialog:  TSaveDialog;
     ColorDialog1:   TColorDialog;
     PageControl1: TPageControl;
@@ -98,7 +97,7 @@ type
     MposX: TLabel;
     MposY: TLabel;
     MposZ: TLabel;
-    ComboBox1: TComboBox;
+    ComboBoxPen: TComboBox;
     TabSheet1: TTabSheet;
     SgFiles: TStringGrid;
     Label1: TLabel;
@@ -321,6 +320,7 @@ type
     LabelResponse: TLabel;
     LabelStatusFaults: TLabel;
     DeviceView: TPanel;
+    ComboBoxInput: TComboBox;
     procedure BtnEmergencyStopClick(Sender: TObject);
     procedure TimerStatusElapsed(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -333,7 +333,7 @@ type
     procedure SgJobDefaultsKeyPress(Sender: TObject; var Key: Char);
     procedure SgPensKeyPress(Sender: TObject; var Key: Char);
     procedure SgFilesKeyPress(Sender: TObject; var Key: Char);
-    procedure ComboBox1Exit(Sender: TObject);
+    procedure ComboBoxPenExit(Sender: TObject);
     procedure SgBlocksDrawCell(Sender: TObject; ACol, ARow: Integer;
       Rect: TRect; State: TGridDrawState);
     procedure SgEditorOn(Sg: TStringGrid; ACol,ARow:integer; NumMode,SideWise:boolean);
@@ -482,6 +482,7 @@ type
       var Handled: Boolean);
     procedure SystemTouchKeyboardOn(Sender: TObject);
     procedure SystemTouchKeyboardOff(Sender: TObject);
+    procedure ComboBoxInputExit(Sender: TObject);
 
   private
     { Private declarations }
@@ -502,6 +503,9 @@ type
     fVideoImage:  TVideoImage;
     fVideoBitmap: TBitmap;
     procedure OnNewVideoFrame(Sender : TObject; Width, Height: integer; DataPtr: pointer);
+    procedure ReportInfo(S:string);
+    procedure ReportWarning(S:string);
+    procedure ReportError(S:string);
     function TouchSupport:boolean;
   end;
 
@@ -754,7 +758,17 @@ const
 
 implementation
 
-uses import_files, Clipper, About, bsearchtree, gerber_import, ParamAssist, Winapi.TlHelp32;
+uses
+  import_files,
+  Clipper,
+  About,
+  bsearchtree,
+  gerber_import,
+  Winapi.TlHelp32,
+  ParamAssist,
+  AssistLine,
+  AssistRect,
+  AssistCircle;
 
 {$R *.dfm}
 
@@ -1201,6 +1215,24 @@ begin
   end;
   FormParamAssist.hide;
 
+  ///// initialisation of Line-Assistant ///////////////////////////////////////
+  if not IsFormOpen('FormAssistLine') then begin
+    FormAssistLine := TFormAssistLine.Create(Self);
+  end;
+  FormAssistLine.hide;
+
+  ///// initialisation of Rect-Assistant ///////////////////////////////////////
+  if not IsFormOpen('FormAssistRect') then begin
+    FormAssistRect := TFormAssistRect.Create(Self);
+  end;
+  FormAssistRect.hide;
+
+  ///// initialisation of Rect-Assistant ///////////////////////////////////////
+  if not IsFormOpen('FormAssistCircle') then begin
+    FormAssistCircle := TFormAssistCircle.Create(Self);
+  end;
+  FormAssistCircle.hide;
+
   ///// initialisation of PopupMenuMaterial ////////////////////////////////////
   for i:=0 to Nmaterial-1 do begin
     mi:= TMenuItem.Create(self);
@@ -1337,8 +1369,8 @@ begin
   else
     Form2.hide;
 
-  Combobox1.Parent := SgFiles;
-  ComboBox1.Visible := False;
+  ComboBoxPen.Visible   := False;
+  ComboBoxInput.Visible := False;
 
   SgEditorOff(SgFiles);
   SgEditorOff(SgJobDefaults);
@@ -1434,6 +1466,25 @@ begin
     Form4.Close;
   if IsFormOpen('Form2') then
     Form2.Close;
+end;
+
+procedure TForm1.ReportInfo(S:string);
+begin
+  Form1.Memo1.lines.add(S);
+end;
+
+procedure TForm1.ReportWarning(S:string);
+begin
+  Form1.Memo1.lines.add('WARNING: ' + S);
+  PlaySound('SYSTEMHAND', 0, SND_ASYNC);
+//  MessageDlg('WARNING: ' + S, mtWarning, [mbOK], 0);
+end;
+
+procedure TForm1.ReportError(S:string);
+begin
+  Form1.Memo1.lines.add('ERROR: ' + S);
+  PlaySound('SYSTEMHAND', 0, SND_ASYNC);
+  MessageDlg(S, mtError, [mbOK], 0);
 end;
 
 function TForm1.TouchSupport:boolean;
@@ -1621,7 +1672,7 @@ var S, Base: string;
     i:       integer;
     mode:    integer;
     DrlName, DimName, TopName, BtmName: string;
-    dx, dy:  double;
+    mirror:  string;
 
   procedure CheckFile(Ext:string; m:integer; var Name:string);
   begin
@@ -1632,11 +1683,12 @@ var S, Base: string;
   end;
 
 begin
-  if not GerberImportDialog.Execute then exit;
+  OpenFileDialog.FilterIndex:= 4;
+  if not OpenFileDialog.Execute then exit;
                // create new job, grid, SgFiles and SgPens shall be synchronized
   FileNew1Execute(Sender);
 
-  Base:= ExtractFileName(GerberImportDialog.FileName);          // get Base name
+  Base:= ExtractFileName(OpenFileDialog.FileName);              // get Base name
   S   := Uppercase(Base);         // delete file extentions and other extentions
   i:= pos('.',S);       if i > 0 then delete(Base,i,100);
   i:= pos('_BOTTOM',S); if i > 0 then delete(Base,i,100);
@@ -1646,7 +1698,7 @@ begin
   i:= pos('_TOP',S);    if i > 0 then delete(Base,i,100);
   i:= pos('_FRONT',S);  if i > 0 then delete(Base,i,100);
   i:= pos('_01',S);     if i > 0 then delete(Base,i,100);
-  Base:= ExtractFileDir(GerberImportDialog.FileName) + '\' + Base;   // add path
+  Base:= ExtractFileDir(OpenFileDialog.FileName) + '\' + Base;       // add path
 
   mode:= 0;                                               // analyse type of PCB
   CheckFile(       '.drl',mDrill, DrlName);
@@ -1659,7 +1711,7 @@ begin
   CheckFile(    '_01.gbr',mTop,   TopName);
   CheckFile(       '.dim',mDim,   DimName);
 
-  dx:= 0; dy:= 0;
+  mirror:= 'OFF';
 
   if ((mode and mBottom <> 0) or (mode and mTop    <> 0)) and
      ( mode and mDim    <> 0 ) then begin                    // something to do?
@@ -1667,63 +1719,44 @@ begin
     dim_fileload(DimName, fDim-1, 7);
 
     if (mode and mTop <> 0) then begin
-
-      GerberFileName:= TopName;                   // start Gerber convert dialog
-      ConvertedFileName:= ChangeFileExt(TopName,'.ncf');
-      GerberFileNumber:= fTop;
-      FormGerber.ShowModal;
-
-      // bei Konvertierung des Fräsepfades vergrößert sich die PCB, da Werkstücke
-      // nicht im negativen Bereich liegen dürfen, muss das ausgeglichen werden
-      with FileParamArray[fTop-1].Bounds do begin
-        dx:= -min.x/c_hpgl_scale; if dx < 0 then dx:= 0;
-        dy:= -min.y/c_hpgl_scale; if dy < 0 then dy:= 0;
-      end;
-
-      SgFiles.Cells[4,fTop]:= FormatFloat('0.00',dx);
-      SgFiles.Cells[5,fTop]:= FormatFloat('0.00',dy);
+      FormGerber.GerberFileNumber:= fTop;         // start Gerber convert dialog
+      FileParamArray[fTop].gbr_name:= TopName;
+      if FormGerber.ShowModal = mrCancel then exit;
 
       job.fileDelimStrings[fTop-1]:=              // store SgFiles values to job
         ShortString(Form1.SgFiles.Rows[fTop].DelimitedText);
-//      OpenFilesInGrid;
     end;
 
     if (mode and mBottom <> 0) then begin
+      FormGerber.GerberFileNumber:= fBtm;         // start Gerber convert dialog
+      FileParamArray[fBtm].gbr_name:= BtmName;
+      if FormGerber.ShowModal <> mrOk then exit;
 
-      GerberFileName:= BtmName;                   // start Gerber convert dialog
-      ConvertedFileName:= ChangeFileExt(BtmName,'.ncb');
-      GerberFileNumber:= fBtm;
-      FormGerber.ShowModal;
-                                // buttom size is mirrowed into the 2nd quadrant
-                                // and have to moved back to the 1st quadrant
-      dx:= -FileParamArray[fDim-1].Bounds.min.x/c_hpgl_scale;
-      SgFiles.Cells[4,fBtm]:= FormatFloat('0.00',dx);
+      mirror:= 'ON';                          // bottom side have to be mirrored
+      SgFiles.Cells[7,fBtm]:= mirror;
 
       job.fileDelimStrings[fBtm-1]:=              // store SgFiles values to job
         ShortString(Form1.SgFiles.Rows[fBtm].DelimitedText);
-//      OpenFilesInGrid;
     end;
 
     if mode and mDim <> 0 then begin                          // LOAD DIMENSIONS
       SgFiles.Cells[0,fDim]:= DimName;                              // file name
       SgFiles.Cells[1,fDim]:= '7';                           // pen override = 7
-      SgFiles.Cells[4,fDim]:= FormatFloat('0.00',dx);
-      SgFiles.Cells[5,fDim]:= FormatFloat('0.00',dy);
+      SgFiles.Cells[7,fDim]:= mirror;
 
       job.fileDelimStrings[fDim-1]:=              // store SgFiles values to job
         ShortString(Form1.SgFiles.Rows[fDim].DelimitedText);
 
-      job.Pens[7].diameter:= 0.8;                                    // diameter
+      job.Pens[7].diameter:= FileParamArray[fDim].gbr_dim_dia;       // diameter
       job.pens[7].z_end:=    job.partsize_z;                                // z
       job.pens[7].shape:=    outside;                         // contour=outside
-      job.pens[7].z_inc:=    0.8;                                 // z increment
+      job.pens[7].z_inc:=    FileParamArray[fDim].gbr_ZCycle;     // z increment
       JobToPenGridList
     end;
 
     if mode and mDrill <> 0 then begin                        // LOAD DRILL DATA
       SgFiles.Cells[0,fDrl]:= DrlName;                    // set drill file name
-      SgFiles.Cells[4,fDrl]:= FormatFloat('0.00',dx);
-      SgFiles.Cells[5,fDrl]:= FormatFloat('0.00',dy);
+      SgFiles.Cells[7,fDrl]:= mirror;
       job.fileDelimStrings[fDrl-1]:=              // store SgFiles values to job
         ShortString(Form1.SgFiles.Rows[fDrl].DelimitedText);
 

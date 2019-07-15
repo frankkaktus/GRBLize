@@ -33,17 +33,17 @@ const
     defAtcPickupZ          = 24;
     defAtcDeltaX           = 25;
     defAtcDeltaY           = 26;
-    defTableX              = 27;
-    defTableY              = 28;
-    defTableZ              = 29;
-    defFix1X               = 30;
-    defFix1Y               = 31;
-    defFix1Z               = 32;
-    defFix2X               = 33;
-    defFix2Y               = 34;
-    defFix2Z               = 35;
-    defAtcToolReleaseCmd   = 36;
-    defAtcToolClampCmd     = 37;
+    defAtcToolReleaseCmd   = 27;
+    defAtcToolClampCmd     = 28;
+    defTableX              = 29;
+    defTableY              = 30;
+    defTableZ              = 31;
+    defFix1X               = 32;
+    defFix1Y               = 33;
+    defFix1Z               = 34;
+    defFix2X               = 35;
+    defFix2Y               = 36;
+    defFix2Z               = 37;
     defJoypadFeedVeryFast  = 38;
     defJoypadFeedFast      = 39;
     defJoypadFeedSlow      = 40;
@@ -54,8 +54,13 @@ const
     defJoypadFloodToggle   = 45;
     defJoypadSpindleToggle = 46;
     defJoypadFeedHold      = 47;
-    defPositivMachineSpace = 48;
-    defTouchKeyboard       = 49;
+    defPcbInflate          = 48;
+    defPcbDimDiameter      = 49;
+    defPcbZCycle           = 50;
+    defPositivMachineSpace = 51;
+    defTouchKeyboard       = 52;
+
+    defDefaultCount        = 53;
 
 type
   T_machine_options = record   // Ausstattungsdetails
@@ -82,6 +87,7 @@ procedure CalcTipDia;
 procedure PenGridListToJob;
 procedure JobToPenGridList;
 procedure ClearFiles;
+procedure ClearFile(i:integer);
 procedure InitJob;
 procedure InitAppdefaults;
 procedure AppDefaultGridListToJob;
@@ -205,23 +211,30 @@ begin
     Form1.SgFiles.Rows[i+1].DelimitedText:= string(job.fileDelimStrings[i]);
 end;
 
+procedure ClearFile(i:integer);
+begin
+  job.fileDelimStrings[i]:= '"",-1,100,100,0,0,0°,OFF,0,""';
+  job.firstLoad[i]:= true;
+  Form1.SgFiles.Rows[i+1].DelimitedText:= string(job.fileDelimStrings[i]);
+
+  with FileParamArray[i] do begin
+    bounds.min.x := high(Integer);
+    bounds.min.y := high(Integer);
+    bounds.max.x := low(Integer);
+    bounds.max.y := low(Integer);
+    valid := false;
+    isdrillfile:= false;
+    gbr_inflate:= get_AppDefaults_float(defPcbInflate);
+    gbr_dim_dia:= get_AppDefaults_float(defPcbDimDiameter);
+    gbr_ZCycle:=  get_AppDefaults_float(defPcbZCycle);
+  end;
+end;
+
 procedure ClearFiles;
 var i: Integer;
 begin
   init_blockarrays;
-  for i := 0 to c_numOfFiles do with Form1.SgFiles do begin
-    job.fileDelimStrings[i]:= '"",-1,100,100,0,0,0°,OFF,0,""';
-    Form1.SgFiles.Rows[i+1].DelimitedText:= string(job.fileDelimStrings[i]);
-
-    with FileParamArray[i] do begin
-      bounds.min.x := high(Integer);
-      bounds.min.y := high(Integer);
-      bounds.max.x := low(Integer);
-      bounds.max.y := low(Integer);
-      valid := false;
-      isdrillfile:= false;
-    end;
-  end;
+  for i := 0 to c_numOfFiles do with Form1.SgFiles do ClearFile(i);
 
   with job do begin
     for i := 0 to 31 do begin
@@ -309,7 +322,7 @@ end;
 procedure InitAppdefaults;
 begin
   with Form1.SgAppDefaults do begin
-    RowCount:= 50;
+    RowCount:= defDefaultCount;
     Rows[defHeadline].DelimitedText:=            'Parameter,Value';
     Rows[defToolchangePause].DelimitedText:=     '"Enable Tool Change in Job",OFF';
     Rows[defToolchangeX].DelimitedText:=         '"Tool Change Position X absolute",10';
@@ -330,13 +343,15 @@ begin
     Rows[defProbeZgauge].DelimitedText:=         '"Floating Z Probe ON Height",25';
     Rows[defInvertZ].DelimitedText:=             '"Invert Z in G-Code",OFF';
     Rows[defSpindleWait].DelimitedText:=         '"Spindle Accel Time (s)",4';
-    Rows[defMaxRotation].DelimitedText:=         '"max. Rotation",10000';
+    Rows[defMaxRotation].DelimitedText:=         '"Spindle max. Rotation",10000';
     Rows[defAtcEnabled].DelimitedText:=          '"ATC enable",OFF';
     Rows[defAtcZeroX].DelimitedText:=            '"ATC zero X absolute",50';
     Rows[defAtcZeroY].DelimitedText:=            '"ATC zero Y absolute",20';
     Rows[defAtcPickupZ].DelimitedText:=          '"ATC pickup height Z abs",-20';
     Rows[defAtcDeltaX].DelimitedText:=           '"ATC row X distance",20';
     Rows[defAtcDeltaY].DelimitedText:=           '"ATC row Y distance",0';
+    Rows[defAtcToolReleaseCmd].DelimitedText:=   '"ATC tool release Cmd","M8"';
+    Rows[defAtcToolClampCmd].DelimitedText:=     '"ATC tool clamp Cmd","M9"';
     Rows[defTableX].DelimitedText:=              '"Table max travel X",200';
     Rows[defTableY].DelimitedText:=              '"Table max travel Y",200';
     Rows[defTableZ].DelimitedText:=              '"Table max travel Z",60';
@@ -346,8 +361,6 @@ begin
     Rows[defFix2X].DelimitedText:=               '"Fixture 2 Zero X","50,00"';
     Rows[defFix2Y].DelimitedText:=               '"Fixture 2 Zero Y","70,00"';
     Rows[defFix2Z].DelimitedText:=               '"Fixture 2 Zero Z","-25,00"';
-    Rows[defAtcToolReleaseCmd].DelimitedText:=   '"ATC tool release Cmd","M8"';
-    Rows[defAtcToolClampCmd].DelimitedText:=     '"ATC tool clamp Cmd","M9"';
     Rows[defJoypadFeedVeryFast].DelimitedText:=  '"Joypad Feed very fast","4000"';
     Rows[defJoypadFeedFast].DelimitedText:=      '"Joypad Feed fast","2000"';
     Rows[defJoypadFeedSlow].DelimitedText:=      '"Joypad Feed slow","500"';
@@ -358,6 +371,9 @@ begin
     Rows[defJoypadFloodToggle].DelimitedText:=   '"Joypad FloodToggle Button",2';
     Rows[defJoypadSpindleToggle].DelimitedText:= '"Joypad SpindleToggle Button",3';
     Rows[defJoypadFeedHold].DelimitedText:=      '"Joypad FeedHold Button",1';
+    Rows[defPcbInflate].DelimitedText:=          '"PCB Inflate",0.5';
+    Rows[defPcbDimDiameter].DelimitedText:=      '"PCB Dia mill Dimension",0.8';
+    Rows[defPcbZCycle].DelimitedText:=           '"PCB Dimension ZCycle",0.8';
     Rows[defPositivMachineSpace].DelimitedText:= '"Positive Machine Space",OFF';
     Rows[defTouchKeyboard].DelimitedText:=       '"TouchKeyboard",OFF';
   end;
@@ -488,6 +504,9 @@ begin
       ReadDef(defJoypadFloodToggle,  'Jogpad',      'FloodToggleButton');
       ReadDef(defJoypadSpindleToggle,'Jogpad',      'SpindleToggleButton');
       ReadDef(defJoypadFeedHold,     'Jogpad',      'FeedHoldButton');
+      ReadDef(defPcbInflate,         'PCB',         'Inflate');
+      ReadDef(defPcbDimDiameter,     'PCB',         'DimDiameter');
+      ReadDef(defPcbZCycle,          'PCB',         'ZCycle');
       ReadDef(defPositivMachineSpace,'Other',       'PositiveMachineSpace');
       ReadDef(defInvertZ,            'Other',       'InvertZinG-Code');
       ReadDef(defTouchKeyboard,      'Other',       'TouchKeyboard');
@@ -550,6 +569,9 @@ begin
       Ini.WriteString('Jogpad',      'FloodToggleButton',    Cells[1,defJoypadFloodToggle]);
       Ini.WriteString('Jogpad',      'SpindleToggleButton',  Cells[1,defJoypadSpindleToggle]);
       Ini.WriteString('Jogpad',      'FeedHoldButton',       Cells[1,defJoypadFeedHold]);
+      Ini.WriteString('PCB',         'Inflate',       Cells[1,defPcbInflate]);
+      Ini.WriteString('PCB',         'DimDiameter',       Cells[1,defPcbDimDiameter]);
+      Ini.WriteString('PCB',         'ZCycle',       Cells[1,defPcbZCycle]);
       Ini.WriteString('Other',       'PositiveMachineSpace', Cells[1,defPositivMachineSpace]);
       Ini.WriteString('Other',       'InvertZinG-Code',      Cells[1,defInvertZ]);
       Ini.WriteString('Other',       'TouchKeyboard',        Cells[1,defTouchKeyboard]);

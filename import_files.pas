@@ -68,6 +68,7 @@ type
 
   Tjob = record
     fileDelimStrings: Array[0..c_numOfFiles] of String[255];
+    firstLoad: array[0..c_numOfFiles] of boolean;
     pens: Array[0..31] of Tpen_record;
     partsize_x: Double;
     partsize_y: Double;
@@ -129,10 +130,13 @@ type
     offset: TintPoint;
     scale:  TFloatPoint;
     scale_y: Double;
-    gbr_inflate: Double;                                   // used for PCBs only
     gbr_name:    string;                                   // used for PCBs only
-    gbr_mirror:  boolean;                                  // used for PCBs only
-
+    gbr_inflate: Double;                                   // used for PCBs only
+    gbr_dim_dia: Double;                                   // used for PCBs only
+    gbr_ZCycle:  Double;                                   // used for PCBs only
+    P0:          TPointFloat;                           // user for instand mill
+    P1:          TPointFloat;                           // user for instand mill
+    P3:          TPointFloat;                           // user for instand mill
   end;
 
   Tblock_record = record
@@ -180,6 +184,40 @@ const
     X: 0;
     Y: 0;
     );
+
+const
+  SVGdataLineLength = 8;
+  SVGdataLine: array[1..SVGdataLineLength] of string =
+   ( '<svg',
+     '  height="297mm"',
+     '  viewBox="0 0 210 297"',
+     '  <g',
+     '    <path',
+     '      d="M {{P0.X}},{{P0.Y}} {{P1.X}},{{P1.Y}}" />',
+     '  </g>',
+     '</svg>' );
+
+  SVGdataRectLength = 8;
+  SVGdataRect: array[1..SVGdataRectLength] of string =
+   ( '<svg',
+     '  height="297mm"',
+     '  viewBox="0 0 210 297"',
+     '  <g',
+     '    <path',
+     '      d="M {{P0.X}},{{P0.Y}} {{P0.X}},{{P1.Y}} {{P1.X}},{{P1.Y}} {{P1.X}},{{P0.Y}} {{P0.X}},{{P0.Y}}" />',
+     '  </g>',
+     '</svg>' );
+
+  SVGdataCircleLength = 8;
+  SVGdataCircle: array[1..SVGdataCircleLength] of string =
+   ( '<svg',
+     '  height="297mm"',
+     '  viewBox="0 0 210 297"',
+     '  <g',
+     '    <circle',
+     '      cx="{{P0.X}}" cy="{{P0.Y}}" r="{{D}}" />',
+     '  </g>',
+     '</svg>' );
 
   PenInit: Tpen_record = (
       used: false;

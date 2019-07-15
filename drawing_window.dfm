@@ -8,7 +8,7 @@ object Form2: TForm2
   BorderStyle = bsSizeToolWin
   Caption = 'Drawing'
   ClientHeight = 587
-  ClientWidth = 856
+  ClientWidth = 926
   Color = clBtnFace
   Constraints.MaxHeight = 800
   Constraints.MaxWidth = 1200
@@ -27,14 +27,14 @@ object Form2: TForm2
   OnPaint = FormPaint
   OnResize = FormResize
   DesignSize = (
-    856
+    926
     587)
   PixelsPerInch = 96
   TextHeight = 13
   object DrawingBox: TPaintBox
     Left = -1
-    Top = 2
-    Width = 857
+    Top = 0
+    Width = 927
     Height = 547
     Hint = 'Milling View - Drag with left-click or modify with right-click'
     Anchors = [akLeft, akTop, akRight, akBottom]
@@ -51,16 +51,17 @@ object Form2: TForm2
   object Panel1: TPanel
     Left = -1
     Top = 549
-    Width = 857
+    Width = 927
     Height = 38
     Align = alCustom
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 0
+    ExplicitWidth = 857
     DesignSize = (
-      857
+      927
       38)
     object BtnZoomReset: TButton
-      Left = 771
+      Left = 655
       Top = 4
       Width = 80
       Height = 30
@@ -81,8 +82,8 @@ object Form2: TForm2
     object CheckBoxDimensions: TCheckBox
       Left = 8
       Top = 8
-      Width = 177
-      Height = 17
+      Width = 168
+      Height = 20
       Anchors = [akLeft, akBottom]
       Caption = 'Show Dimensions'
       Font.Charset = DEFAULT_CHARSET
@@ -95,10 +96,10 @@ object Form2: TForm2
       OnClick = CheckBoxDimensionsClick
     end
     object CheckBoxDirections: TCheckBox
-      Left = 190
+      Left = 191
       Top = 8
       Width = 162
-      Height = 17
+      Height = 20
       Anchors = [akLeft, akBottom]
       Caption = 'Show Directions'
       Font.Charset = DEFAULT_CHARSET
@@ -111,10 +112,10 @@ object Form2: TForm2
       OnClick = CheckBoxDirectionsClick
     end
     object CheckBoxToolpath: TCheckBox
-      Left = 358
+      Left = 359
       Top = 8
       Width = 155
-      Height = 17
+      Height = 20
       Anchors = [akLeft, akBottom]
       Caption = 'Show Tool Path'
       Checked = True
@@ -129,7 +130,7 @@ object Form2: TForm2
       OnClick = CheckBoxDirectionsClick
     end
     object BtnDecZoom: TButton
-      Left = 649
+      Left = 817
       Top = 4
       Width = 30
       Height = 30
@@ -148,7 +149,7 @@ object Form2: TForm2
       OnClick = BrtZoomDecClick
     end
     object BtnIncZoom: TButton
-      Left = 730
+      Left = 888
       Top = 4
       Width = 30
       Height = 30
@@ -167,34 +168,52 @@ object Form2: TForm2
       OnClick = BtnZoomIncClich
     end
     object ViewZoom: TStaticText
-      Left = 685
-      Top = 4
-      Width = 26
-      Height = 29
+      Left = 854
+      Top = 7
+      Width = 28
+      Height = 27
       Anchors = [akRight, akBottom]
-      Caption = '50'
+      Caption = '0,9'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -21
+      Font.Height = -19
       Font.Name = 'Tahoma'
       Font.Style = []
       ParentFont = False
       TabOrder = 6
     end
     object StaticText4: TStaticText
-      Left = 577
-      Top = 4
-      Width = 63
-      Height = 29
+      Left = 753
+      Top = 8
+      Width = 58
+      Height = 20
       Anchors = [akRight, akBottom]
       Caption = 'Zoom:'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -21
+      Font.Height = -19
       Font.Name = 'Tahoma'
       Font.Style = []
       ParentFont = False
       TabOrder = 7
+    end
+    object CheckBoxHilite: TCheckBox
+      Left = 520
+      Top = 8
+      Width = 119
+      Height = 20
+      Anchors = [akLeft, akBottom]
+      Caption = 'Show Hilite'
+      Checked = True
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -19
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
+      State = cbChecked
+      TabOrder = 8
+      OnClick = CheckBoxDirectionsClick
     end
   end
   object PopupMenuPoint: TPopupMenu

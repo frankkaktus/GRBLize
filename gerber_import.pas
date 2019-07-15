@@ -16,7 +16,7 @@ interface
 uses ShellApi, Winapi.Windows, MMsystem, System.SysUtils, System.Classes,
   Vcl.Graphics, Vcl.Forms,
   Vcl.Controls, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls, Vcl.Dialogs,
-  import_files, grbl_com, Vcl.ComCtrls;
+  import_files, grbl_com, Vcl.ComCtrls, Vcl.Touch.Keyboard;
 
 function CallPcb2Gcode(source_path: String;
                        Mirrored:    boolean;
@@ -30,14 +30,17 @@ type
     EditInflate: TEdit;
     Memo2: TMemo;
     PaintBox1: TPaintBox;
-    OpenFileDialog: TOpenDialog;
     InflateBar: TTrackBar;
     InflateGroup: TGroupBox;
-    CheckMirror: TCheckBox;
     PCBBox: TGroupBox;
     ComboThickness: TComboBox;
     Label1: TLabel;
     TimerInflateBar: TTimer;
+    EditDimDia: TEdit;
+    EditZCycle: TEdit;
+    Label2: TLabel;
+    Label3: TLabel;
+    TouchKeyboard: TTouchKeyboard;
     procedure OKBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure CancelBtnClick(Sender: TObject);
@@ -48,27 +51,30 @@ type
     procedure EditInflateKeyPress(Sender: TObject; var Key: Char);
     procedure InflateEditExit(Sender: TObject);
     procedure InflateChange;
-    procedure CheckMirrorClick(Sender: TObject);
     procedure InflateBarTimer(Sender: TObject);
+    procedure ShowTouchKeyboard(Sender: TObject);
+    procedure HideTouchKeyboard(Sender: TObject);
+    procedure EditDimDiaKeyPress(Sender: TObject; var Key: Char);
+    procedure EditZCycleKeyPress(Sender: TObject; var Key: Char);
   private
     { Private-Deklarationen }
+    ConvertedFileName: String;
+    img: TImage;
+    image_loaded: Boolean;
   public
     { Public-Deklarationen }
+    GerberFileNumber: Integer;
   end;
 
 var
   FormGerber: TFormGerber;
-  GerberFileName, ConvertedFileName: String;
-  GerberFileNumber: Integer;
-  img: TImage;
-  image_loaded: Boolean;
 
 
 implementation
 
 {$R *.dfm}
 
-uses grbl_player_main;
+uses grbl_player_main, app_defaults;
 
 procedure ExecuteFile(const AFilename: String;
               AParameter, ACurrentDir: String;
@@ -299,7 +305,7 @@ begin
 
   my_side:= '--front'; if Mirrored then my_side:= '--back';
 
-  ConvertedFileName:= ChangeFileExt(source_path, target_ext);
+  FormGerber.ConvertedFileName:= ChangeFileExt(source_path, target_ext);
 
   my_arg:= my_side + #32 + source_path
     + ' --nog81 --dpi ' + Dpi
@@ -307,7 +313,7 @@ begin
     + ' --offset ' + FloatToStrDot(my_offset)
     + ' --mill-feed 200'
     + ' --optimise=1 --mill-speed 3000 --metric=1 --metricoutput=1 '
-    + my_side + '-output ' + ConvertedFileName;
+    + my_side + '-output ' + FormGerber.ConvertedFileName;
   ExecuteFile(my_converter_path, my_arg, ExtractFilePath(my_converter_path), true, true);
   Result := my_arg;
 end;
@@ -317,7 +323,8 @@ var CmdStr, my_png_path: String;
 begin
   Paintbox1.canvas.Brush.Color:= clsilver;
   Paintbox1.canvas.FillRect(rect(0,0,PaintBox1.Width,PaintBox1.Height));
-  Caption:= 'Convert Gerber to GCode: ' + ExtractFileName(GerberFileName);
+  Caption:= 'Convert Gerber to GCode: ' +
+            ExtractFileName(FileParamArray[GerberFileNumber].gbr_name);
 
   my_png_path:= ExtractFilePath(Application.ExeName) + 'pcb2gcode\outp1_traced.png';
   if FileExists(my_png_path) then DeleteFile(my_png_path);
@@ -327,9 +334,10 @@ begin
   Application.ProcessMessages;
   Screen.Cursor:= crHourglass;
 
-  CmdStr := CallPcb2Gcode(GerberFileName,
-                          CheckMirror.Checked,
-                          FileParamArray[GerberFileNumber-1].gbr_inflate,
+  CmdStr := CallPcb2Gcode(FileParamArray[GerberFileNumber].gbr_name,
+                          false,
+//                          CheckMirror.Checked,
+                          StrToFloatDef(EditInflate.Text, 0.1),
                           '500');
 
   if CmdStr = '' then begin
@@ -355,7 +363,7 @@ begin
     img.Picture.LoadFromFile(my_png_path);
     image_loaded:= true;
     // Image ist idR sehr groﬂ, muss skaliert werden
-    if CheckMirror.Checked then Mirror(img.picture);
+//    if CheckMirror.Checked then Mirror(img.picture);
 //    Application.ProcessMessages;
     paint;
   end else begin
@@ -368,14 +376,30 @@ end;
 
 procedure TFormGerber.InflateBarChange(Sender: TObject);
 begin
+  EditInflate.Text:= FloatToStr(InflateBar.Position/10);       // update Inflate
                  // first end the windows event handling before serve the change
                  // handle only after MouseUp
   if GetAsyncKeyState(VK_LBUTTON) = 0 then TimerInflateBar.Enabled:= true;
 end;
 
-procedure TFormGerber.CheckMirrorClick(Sender: TObject);
+procedure TFormGerber.ShowTouchKeyboard(Sender: TObject);
 begin
-  InflateChange;
+  if Form1.TouchSupport then TouchKeyboard.Show;
+end;
+
+procedure TFormGerber.HideTouchKeyboard(Sender: TObject);
+begin
+  TouchKeyboard.Hide;
+end;
+
+procedure TFormGerber.EditDimDiaKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then TouchKeyboard.Hide;;
+end;
+
+procedure TFormGerber.EditZCycleKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then TouchKeyboard.Hide;
 end;
 
 procedure TFormGerber.EditInflateKeyPress(Sender: TObject; var Key: Char);
@@ -386,6 +410,7 @@ end;
 procedure TFormGerber.InflateEditExit(Sender: TObject);
 var v, v0: double;
 begin
+  TouchKeyboard.Hide;
   v0:= -1;                                // limit value to limits of InflateBar
   v:= 10*StrToFloatDef(EditInflate.Text, 0.1);
   if v < InflateBar.Min then v0:= InflateBar.Min;
@@ -403,6 +428,7 @@ begin
   PlaySound('SYSTEMHAND', 0, SND_ASYNC);
 end;
 
+{
 procedure set_mirrored;
 var my_filename: String;
 begin
@@ -417,30 +443,37 @@ begin
     FormGerber.CheckMirror.checked:= true;
   end;
 end;
+}
 
 procedure TFormGerber.CancelBtnClick(Sender: TObject);
 begin
-  GerberFileName:='';
+  ClearFile(GerberFileNumber);
   ConvertedFileName:='';
-  GerberFileNumber:= 1;
+  GerberFileNumber:= 0;
   Memo2.Lines.Add('Gerber import cancelled');
   close;
 end;
 
 procedure TFormGerber.FormActivate(Sender: TObject);
+var GerberFileName: string;
 begin
+  TouchKeyboard.Hide;
   img := TImage.create(nil);
   OKbtn.Enabled:= false;
   Memo2.lines.clear;
   image_loaded:= false;
+  GerberFileName:= FileParamArray[GerberFileNumber].gbr_name;
   if FileExists(GerberFileName) then begin
     GerberFileName:= RenameFileBlanks(GerberFileName);
     if pos(#32,GerberFileName) > 0 then
       blank_warning
     else begin
-      set_mirrored;
+//      set_mirrored;
       Caption:= 'Convert Gerber to GCode: ' + ExtractFileName(GerberFileName);
+      EditInflate.Text:= FloatToStr(FileParamArray[GerberFileNumber].gbr_inflate);
       InflateEditExit(Sender);
+      EditDimDia.Text:= FloatToStr(FileParamArray[GerberFileNumber].gbr_dim_dia);
+      EditZCycle.Text:= FloatToStr(FileParamArray[GerberFileNumber].gbr_ZCycle);
     end;
   end else begin
     Memo2.Lines.Add('Please open a Gerber File.');
@@ -495,15 +528,15 @@ begin
     Form1.SgJobDefaults.Cells[1, 3]:= ComboThickness.Text;
     job.partsize_z:= StrToFloatDef(ComboThickness.Text, 1.6);
 
-    FileParamArray[GerberFileNumber].gbr_name:=    GerberFileName;
-    FileParamArray[GerberFileNumber].gbr_mirror:=  CheckMirror.Checked;
     FileParamArray[GerberFileNumber].gbr_inflate:= StrToFloatDef(EditInflate.Text, 0.1);
+    FileParamArray[GerberFileNumber].gbr_dim_dia:= StrToFloatDef(EditDimDia.Text, 0.1);
+    FileParamArray[GerberFileNumber].gbr_ZCycle:=  StrToFloatDef(EditZCycle.Text, 0.1);
 
     Memo2.Lines.Add('Added file '+ ConvertedFileName);
     OpenFilesInGrid;
   end else
     Memo2.Lines.Add('Error: File not Found!');
-  close;
+  hide;
 end;
 
 procedure TFormGerber.InflateBarTimer(Sender: TObject);
