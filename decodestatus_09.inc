@@ -107,19 +107,26 @@ var
       if is_jogging then begin  // Kurzmeldung von GRBL-JOG 0.9j
         if my_Str = 'JogX' then begin
           grbl_wpos.x:= StrDotToFloat(sl_values[1]);
-          PosX.Caption:= FormatFloat('000.00', grbl_wpos.x);
-          PosX_2.Caption:= PosX.Caption;
+//          WPosX.Caption:= FormatFloat('000.00', grbl_wpos.x);
+//          WPosX_2.Caption:= WPosX.Caption;
+//          FormSelectPosition.WPosX.Caption:= WPosX.Caption;
         end;
         if my_Str = 'JogY' then begin
           grbl_wpos.y:= StrDotToFloat(sl_values[1]);
-          PosY.Caption:= FormatFloat('000.00', grbl_wpos.y);
-          PosY_2.Caption:= PosY.Caption;
+//          WPosY.Caption:= FormatFloat('000.00', grbl_wpos.y);
+//          WPosY_2.Caption:= WPosY.Caption;
+//          FormSelectPosition.WPosY.Caption:= WPosY.Caption;
         end;
         if my_Str = 'JogZ' then begin
           grbl_wpos.z:= StrDotToFloat(sl_values[1]);
-          PosZ.Caption:= FormatFloat('000.00', grbl_wpos.z);
-          PosZ_2.Caption:= PosZ.Caption;
+//          WPosZ.Caption:= FormatFloat('000.00', grbl_wpos.z);
+//          WPosZ_2.Caption:= WPosZ.Caption;
         end;
+        grbl_mpos.x:= grbl_wpos.x + WorkZero.X;
+        grbl_mpos.y:= grbl_wpos.y + WorkZero.y;
+        grbl_mpos.z:= grbl_wpos.z + WorkZero.Z;
+        DisplayWorkPosition;
+        DisplayMachinePosition;
       end else begin
         my_start_idx:= sl_values.IndexOf('MPos');
         if my_start_idx >= 0 then begin

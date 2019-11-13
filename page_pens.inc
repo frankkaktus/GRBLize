@@ -142,7 +142,7 @@ end;
 
 procedure TForm1.SgPensKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#10, #13, #27] then SgPensExit(Sender);
+  if CharInSet(Key, [#10, #13, #27]) then SgPensExit(Sender);
 end;
 
 procedure TForm1.SgPensSelectCell(Sender: TObject; ACol, ARow: Integer;

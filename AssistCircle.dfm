@@ -3,7 +3,7 @@ object FormAssistCircle: TFormAssistCircle
   Top = 0
   Caption = 'FormAssistCircle'
   ClientHeight = 264
-  ClientWidth = 723
+  ClientWidth = 726
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -15,7 +15,7 @@ object FormAssistCircle: TFormAssistCircle
   TextHeight = 13
   object Label1: TLabel
     Left = 360
-    Top = 27
+    Top = 31
     Width = 46
     Height = 23
     Caption = '[mm]'
@@ -28,7 +28,7 @@ object FormAssistCircle: TFormAssistCircle
   end
   object Label2: TLabel
     Left = 360
-    Top = 64
+    Top = 81
     Width = 46
     Height = 23
     Caption = '[mm]'
@@ -41,7 +41,7 @@ object FormAssistCircle: TFormAssistCircle
   end
   object Label3: TLabel
     Left = 360
-    Top = 101
+    Top = 131
     Width = 46
     Height = 23
     Caption = '[mm]'
@@ -54,7 +54,7 @@ object FormAssistCircle: TFormAssistCircle
   end
   object LabelRadius: TLabel
     Left = 160
-    Top = 101
+    Top = 131
     Width = 56
     Height = 23
     Caption = 'Radius'
@@ -257,9 +257,65 @@ object FormAssistCircle: TFormAssistCircle
       1AF507C61A71022A42204E402104E2041442204E402104E2041442204E4021FC
       0F7479D9CB20E96CE10000000049454E44AE426082}
   end
+  object BuutonOK: TSpeedButton
+    Left = 211
+    Top = 218
+    Width = 195
+    Height = 40
+    Caption = 'OK'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonOKClick
+  end
+  object ButtonCancel: TSpeedButton
+    Left = 6
+    Top = 218
+    Width = 195
+    Height = 40
+    Caption = 'Cancel'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonCancelClick
+  end
+  object ButtonCenter: TSpeedButton
+    Left = 154
+    Top = 24
+    Width = 75
+    Height = 40
+    Caption = 'Center'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonCenterCamClick
+  end
+  object ButtonP1: TSpeedButton
+    Left = 154
+    Top = 74
+    Width = 75
+    Height = 40
+    Caption = 'P1'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonP1CamClick
+  end
   object EditCX: TEdit
     Left = 233
-    Top = 24
+    Top = 28
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -271,11 +327,12 @@ object FormAssistCircle: TFormAssistCircle
     ParentFont = False
     TabOrder = 0
     Text = '0,0'
-    OnExit = OnChangeP0
+    OnExit = OnChangeC
+    OnKeyPress = OnKeyPress
   end
   object EditCY: TEdit
     Left = 298
-    Top = 24
+    Top = 28
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -287,11 +344,12 @@ object FormAssistCircle: TFormAssistCircle
     ParentFont = False
     TabOrder = 1
     Text = '0,0'
-    OnExit = OnChangeP0
+    OnExit = OnChangeC
+    OnKeyPress = OnKeyPress
   end
   object EditP1X: TEdit
     Left = 233
-    Top = 61
+    Top = 78
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -304,10 +362,11 @@ object FormAssistCircle: TFormAssistCircle
     TabOrder = 2
     Text = '100,0'
     OnExit = OnChangeP1
+    OnKeyPress = OnKeyPress
   end
   object EditP1Y: TEdit
     Left = 298
-    Top = 61
+    Top = 78
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -320,10 +379,11 @@ object FormAssistCircle: TFormAssistCircle
     TabOrder = 3
     Text = '0,0'
     OnExit = OnChangeP1
+    OnKeyPress = OnKeyPress
   end
   object EditRadius: TEdit
     Left = 233
-    Top = 98
+    Top = 128
     Width = 125
     Height = 31
     Alignment = taRightJustify
@@ -335,36 +395,8 @@ object FormAssistCircle: TFormAssistCircle
     ParentFont = False
     TabOrder = 4
     Text = '0,0'
-  end
-  object ButtonOK: TButton
-    Left = 211
-    Top = 189
-    Width = 195
-    Height = 40
-    Caption = 'OK'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 5
-    OnClick = ButtonOKClick
-  end
-  object ButtonCancel: TButton
-    Left = 6
-    Top = 189
-    Width = 195
-    Height = 40
-    Caption = 'Cancel'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 6
-    OnClick = ButtonCancelClick
+    OnExit = OnChangeRadius
+    OnKeyPress = OnKeyPress
   end
   object TouchKeyboard1: TTouchKeyboard
     Left = 417
@@ -373,34 +405,6 @@ object FormAssistCircle: TFormAssistCircle
     Height = 250
     GradientEnd = clSilver
     GradientStart = clGray
-    Layout = 'NumPad'
-  end
-  object ButtonCenter: TButton
-    Left = 154
-    Top = 24
-    Width = 75
-    Height = 31
-    Caption = 'Center'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 8
-  end
-  object ButtonP1: TButton
-    Left = 154
-    Top = 61
-    Width = 75
-    Height = 31
-    Caption = 'P1'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 9
+    Layout = 'PurNumPad'
   end
 end

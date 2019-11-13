@@ -19,22 +19,25 @@ type
     Label2: TLabel;
     Label3: TLabel;
     LabelRadius: TLabel;
-    ButtonOK: TButton;
-    ButtonCancel: TButton;
     TouchKeyboard1: TTouchKeyboard;
     Image1: TImage;
-    ButtonCenter: TButton;
-    ButtonP1: TButton;
-    procedure OnChangeP0(Sender: TObject);
+    BuutonOK: TSpeedButton;
+    ButtonCancel: TSpeedButton;
+    ButtonCenter: TSpeedButton;
+    ButtonP1: TSpeedButton;
     procedure ButtonCancelClick(Sender: TObject);
     procedure ButtonOKClick(Sender: TObject);
+    procedure ButtonCenterCamClick(Sender: TObject);
+    procedure ButtonP1CamClick(Sender: TObject);
+    procedure OnChangeC(Sender: TObject);
     procedure OnChangeP1(Sender: TObject);
     procedure OnChangeRadius(Sender: TObject);
+    procedure OnKeyPress(Sender: TObject; var Key: Char);
   private
     { Private-Deklarationen }
   public
-    C:     TPointFloat;
-    P1:     TPointFloat;
+    C:       TPointFloat;
+    P1:      TPointFloat;
     Radius:  double;
     function ShowModal(Row: integer):integer; reintroduce;
     function GetID:string;
@@ -47,7 +50,7 @@ implementation
 
 {$R *.dfm}
 
-uses grbl_player_main;
+uses grbl_player_main, SelectPosition;
 
 procedure TFormAssistCircle.ButtonCancelClick(Sender: TObject);
 begin
@@ -57,6 +60,24 @@ end;
 procedure TFormAssistCircle.ButtonOKClick(Sender: TObject);
 begin
   FormAssistCircle.ModalResult:= mrOK;
+end;
+
+procedure TFormAssistCircle.ButtonCenterCamClick(Sender: TObject);
+begin
+  if FormSelectPosition.ShowModal(C) = mrOK then begin
+    EditCX.Text:= FormSelectPosition.WPosX.Caption;
+    EditCY.Text:= FormSelectPosition.WPosY.Caption;
+    OnChangeC(nil);
+  end;
+end;
+
+procedure TFormAssistCircle.ButtonP1CamClick(Sender: TObject);
+begin
+  if FormSelectPosition.ShowModal(P1) = mrOK then begin
+    EditP1X.Text:= FormSelectPosition.WPosX.Caption;
+    EditP1Y.Text:= FormSelectPosition.WPosY.Caption;
+    OnChangeP1(nil);
+  end;
 end;
 
 function TFormAssistCircle.ShowModal(Row: integer):integer;
@@ -70,8 +91,8 @@ begin
   EditP1Y.Text:= FormatFloat('0.0',P1.Y);
   Radius:= sqrt( (P1.x-C.x)*(P1.x-C.x) + (P1.y-C.y)*(P1.y-C.y) );
   EditRadius.Text:= FormatFloat('0.0',Radius);
-  if Form1.TouchSupport then Width:= 690                           // touch supported?
-                        else Width:= 380;
+  if Form1.TouchSupport then Width:= 742                     // touch supported?
+                        else Width:= 428;
 
   Result:= inherited ShowModal;
 
@@ -102,7 +123,12 @@ begin
   EditP1Y.Text:= FormatFloat('0.0',P1.y);
 end;
 
-procedure TFormAssistCircle.OnChangeP0(Sender: TObject);
+procedure TFormAssistCircle.OnKeyPress(Sender: TObject; var Key: Char);
+begin
+  if CharInSet(Key, [#27]) then ButtonCancelClick(Sender);
+end;
+
+procedure TFormAssistCircle.OnChangeC(Sender: TObject);
 var Cold: TPointFloat;
 begin
   Cold:= C;
@@ -115,12 +141,6 @@ begin
   P1.y:= P1.y - Cold.y + C.y;
   EditP1X.Text:= FormatFloat('0.0',P1.x);
   EditP1Y.Text:= FormatFloat('0.0',P1.y);
-
-//  Length:= sqrt( (P1.x-P0.x)*(P1.x-P0.x) + (P1.y-P0.y)*(P1.y-P0.y) );
-//  EditLength.Text:= FormatFloat('0.0',Length);
-
-//  Angle:= arcsin( (P1.y-P0.y) / Length );
-//  EditAngle.Text:= FormatFloat('0.00',Angle*180/Pi);
 end;
 
 procedure TFormAssistCircle.OnChangeP1(Sender: TObject);
@@ -132,7 +152,6 @@ begin
 
   Radius:= sqrt( (P1.x-C.x)*(P1.x-C.x) + (P1.y-C.y)*(P1.y-C.y) );
   EditRadius.Text:= FormatFloat('0.0',Radius);
-
 end;
 
 end.

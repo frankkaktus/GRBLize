@@ -38,6 +38,7 @@ type
     procedure CancelButtonClick(Sender: TObject);
     procedure OKButtonClick(Sender: TObject);
     procedure Calculate(Sender: TObject);
+    procedure EditDiameterKeyPress(Sender: TObject; var Key: Char);
   private
     { Private-Deklarationen }
     Rotation: integer;
@@ -86,6 +87,11 @@ begin
   end;
 end;
 
+procedure TFormParamAssist.EditDiameterKeyPress(Sender: TObject; var Key: Char);
+begin
+  if CharInSet(Key, [#27]) then CancelButtonClick(Sender);
+end;
+
 procedure TFormParamAssist.CancelButtonClick(Sender: TObject);
 begin
   FormParamAssist.ModalResult:= mrCancel;
@@ -104,6 +110,9 @@ begin
   ComboBoxBlades.ItemIndex:=   job.pens[Pen].Blades-1;
 
   Calculate(nil);
+
+  if Form1.TouchSupport then FormParamAssist.Width:= 690     // touch supported?
+                        else FormParamAssist.Width:= 380;
 
   Result:= inherited ShowModal;
 

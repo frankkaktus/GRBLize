@@ -1,0 +1,57 @@
+Manupulation des TouchKeyBoards
+===============================
+
+Quelle: https://entwickler-ecke.de/topic_TTouchKeyboard+anpassen_112093.html
+
+Mitgeleifert werden nur zwei Layouts des TouchKeyboards (Standard, NumLook). Mit
+Hilfe eines Hacks lassen sich aber diese beiden Layouts aus den resourcen als
+XML-File speichern und entsprehend den eigenen W¸nschen manipulieren. Mit einem 
+zweiten Programm l‰ﬂt sich die ge‰nderte XML wieder ins Bin‰rformat wandeln und 
+als Resource laden.
+
+Ressource==>XML:   cc.embarcadero.com/item/27543
+XML==>Bin‰re:      cc.embarcadero.com/item/27571
+
+XML des originalen Numlook-Keyboards:
+<keyboard keyboardname="NumPad" keyboardtype="NumPad" width="190" height="229" minwidth="180" minheight="150" rowheight="48">
+  <row topmargin="0" bottommargin="2">
+    <key keyimage="3" scancode="14" width="48" height="48" rightmargin="2" publishedname="Backspace"/>
+    <key vk="111" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="106" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="109" width="48" height="48" leftmargin="2" stretch="true"/>
+  </row>
+  <row topmargin="2" bottommargin="2">
+    <key vk="103" width="48" height="48" rightmargin="2"/>
+    <key vk="104" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="105" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="107" width="48" height="92" leftmargin="2" stretch="true"/>
+  </row>
+  <row topmargin="2" bottommargin="2">
+    <key vk="100" width="48" height="48" rightmargin="2"/>
+    <key vk="101" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="102" width="48" height="48" leftmargin="2"/>
+  </row>
+  <row topmargin="2" bottommargin="2">
+    <key vk="97" width="48" height="48" rightmargin="2"/>
+    <key vk="98" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="99" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key keyimage="8" vk="13" width="48" height="92" leftmargin="2" stretch="true" publishedname="Enter"/>
+  </row>
+  <row topmargin="2" bottommargin="0">
+    <key vk="96" width="96" height="48" rightmargin="2"/>
+    <key vk="110" width="48" height="48" leftmargin="2" rightmargin="2"/>
+  </row>
+</keyboard>
+
+Ablauf zum Einbinden:
+- Anpassen keyboardname und keyboardtype (als eindeutige Referenz)
+- kcc <Layoutfile.xml>  ==> <Layoutfile.binary> wird angelegt
+- Ressourcefile <ressource.rc> anlegen und ins Projekt einbinden
+  "NumpadKeyboard RCDATA <Layoutfile.binary>"
+  ==> damit entsteht durch Aufruf von brcc32 beim ‹bersetzen in eine 
+      Resourcedatei (*.res) 
+- Einbinden mit {$R 'NumpadKeyboard.res' 'NumpadKeyboard.rc'} in *.dpr
+  Eventuell passiert das automations, war zumindest ohne mein Zutun in der Datei
+- Eintragen des Layouts als "Layout" des TouchKeyboards
+  Explizit unter Beachtung der Groﬂ-/Kleinschreibung eintragen, im Layouteditor
+  wird das Keyboard dann nur noch grau dargestellt, zur Laufzeit ist es aber da

@@ -176,7 +176,10 @@ begin
 
   for i:= 0 to my_len-1 do begin
     // alle nicht besuchten Punkte absuchen
-    dvo:= high(Integer);
+//    dvo:= high(Integer);
+    dvo:= MaxDouble;
+    last_dx:= MaxDouble;        // verhindert Warnung wegen Nichtinitialisierung
+    last_dy:= MaxDouble;
     for p:= 0 to my_len-1 do begin
       if found_array[p] then
         continue; // bereits besucht

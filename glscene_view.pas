@@ -330,7 +330,7 @@ procedure GLSsetToolDia(d: Double; tooltip: integer);
 begin
   gcsim_dia:= d;
   gcsim_tooltip:= tooltip;
-  if Form1.Show3DPreview1.Checked then
+  if Form1.Show3DPreview then
     SetTool(d/2/c_GLscale, tooltip, gcsim_color);
 end;
 
@@ -346,7 +346,7 @@ var
   sz, old_z, new_z: Double;
   ax, ay, px, py: Integer;
 begin
-  if not Form1.Show3DPreview1.Checked then
+  if not Form1.Show3DPreview then
     exit;
   if z > 0 then  // Höhe über Werkstück
     exit;
@@ -422,7 +422,7 @@ var
   last_node: Integer;
   sx, sy, sz: Double; // auf GL skalierte Werte
 begin
-  if (not isSimActive) or (not Form1.Show3DPreview1.Checked) then
+  if (not isSimActive) or (not Form1.Show3DPreview) then
     exit;
 
   Form4.GLLinesPath.Visible:= show_tool and Form4.CheckToolpathVisible.Checked;
@@ -523,7 +523,6 @@ begin
 end;
 
 procedure TForm4.FormReset;
-var a1: TGLContours;
 begin
   GLsceneViewer1.Invalidate;
   GLSmoothNavigator1.VirtualUp.AsAffineVector:= YVector;
@@ -582,41 +581,20 @@ begin
   GLCubeWP.Position.Z:= job.partsize_z / (c_GLscale*2);
   GLDummyCubeTarget.Position.Z:= job.partsize_z / c_GLscale; // Stecknadel
 
-{  with GLExtrusionSolid1, Contours do begin
-    DeleteChildren;
-    Height:= job.partsize_z / c_GLscale;
-    Position.X:= -job.partsize_x / (c_GLscale*2);
-    Position.Y:= -job.partsize_y / (c_GLscale*2);
-    Clear;
+  GLExtrusionSolid1.DeleteChildren;
+  GLExtrusionSolid1.Height:= job.partsize_z / c_GLscale;
+  GLExtrusionSolid1.Position.X:= -job.partsize_x / (c_GLscale*2);
+  GLExtrusionSolid1.Position.Y:= -job.partsize_y / (c_GLscale*2);
+  GLExtrusionSolid1.Contours.Clear;
 
-    // Werkstück erstellen
-    with Add.Nodes do begin
-      AddNode(0, 0, 0);
-      AddNode(job.partsize_x / c_GLscale, 0, 0);
-      AddNode(job.partsize_x / c_GLscale, job.partsize_y / c_GLscale, 0);
-      AddNode(0, job.partsize_y / c_GLscale, 0);
-    end;
-    Add;
-  end;}
-
-//  with GLExtrusionSolid1, Contours do begin
-    a1:= GLExtrusionSolid1.Contours;
-
-    GLExtrusionSolid1.DeleteChildren;
-    GLExtrusionSolid1.Height:= job.partsize_z / c_GLscale;
-    GLExtrusionSolid1.Position.X:= -job.partsize_x / (c_GLscale*2);
-    GLExtrusionSolid1.Position.Y:= -job.partsize_y / (c_GLscale*2);
-    GLExtrusionSolid1.Contours.Clear;
-
-    // Werkstück erstellen
-    with GLExtrusionSolid1.Contours.Add.Nodes do begin
-      AddNode(0, 0, 0);
-      AddNode(job.partsize_x / c_GLscale, 0, 0);
-      AddNode(job.partsize_x / c_GLscale, job.partsize_y / c_GLscale, 0);
-      AddNode(0, job.partsize_y / c_GLscale, 0);
-    end;
-    GLExtrusionSolid1.Contours.Add;
-//  end;
+  // Werkstück erstellen
+  with GLExtrusionSolid1.Contours.Add.Nodes do begin
+    AddNode(0, 0, 0);
+    AddNode(job.partsize_x / c_GLscale, 0, 0);
+    AddNode(job.partsize_x / c_GLscale, job.partsize_y / c_GLscale, 0);
+    AddNode(0, job.partsize_y / c_GLscale, 0);
+  end;
+  GLExtrusionSolid1.Contours.Add;
 
   gl_mult_scale:= c_GLscale * gl_arr_scale;
   GLHeightFieldWP.XSamplingScale.Step:= 1/gl_mult_scale;
@@ -633,7 +611,7 @@ var
 
 begin
   // ersten eingeschalteten Eintrag in ListBlocks, dessen Mittelpunkt nehmen
-  if not Form1.Show3DPreview1.Checked then
+  if not Form1.Show3DPreview then
     exit;
   my_hpgl_div:= c_hpgl_scale * c_GLscale;
   x:= my_final_bounds.mid.x / my_hpgl_div;
@@ -645,7 +623,7 @@ end;
 procedure GLSfinalize3Dview;
 // letzte Aktualisierung
 begin
-  if (not Form1.Show3DPreview1.Checked) then
+  if (not Form1.Show3DPreview) then
     exit;
   if ena_finite then with Form4 do begin
     LEDbusy3d.Checked:= true;
@@ -731,7 +709,7 @@ begin
   FormReset;
   if length(final_array) = 0 then
     exit;
-  if not Form1.Show3DPreview1.Checked then
+  if not Form1.Show3DPreview then
     exit;
 //  ComboBoxSimTypeChange(Sender);
   my_hpgl_div:= c_hpgl_scale * c_GLscale;
@@ -883,7 +861,7 @@ var i: Integer;
 begin
   if not gl_initialized then
     exit;
-  if not Form1.Show3DPreview1.Checked then
+  if not Form1.Show3DPreview then
     exit;
   if Form4.GLDummyCubeATC.Visible then
     with Form4 do begin
@@ -939,7 +917,7 @@ procedure GLSsetATCandProbe;
 begin
   if not gl_initialized then
     exit;
-  if not Form1.Show3DPreview1.Checked then
+  if not Form1.Show3DPreview then
     exit;
   with Form4 do begin
     GLDummyCubeZprobe.Visible:= job.toolchange_pause and job.use_fixed_probe;
@@ -984,7 +962,7 @@ end;
 
 procedure GLSclearPathNodes;
 begin
-  if Form1.Show3DPreview1.Checked then with Form4 do begin
+  if Form1.Show3DPreview then with Form4 do begin
     GLLinesPath.Nodes.Clear;
     GLsceneViewer1.Invalidate;
     GLSmoothNavigator1.AutoScaleParameters(100);
@@ -1009,7 +987,7 @@ end;
 procedure TForm4.Timer1Timer(Sender: TObject);
 // jede Sekunde
 begin
-  if not Form1.Show3DPreview1.Checked then
+  if not Form1.Show3DPreview then
     exit;
   if not isSimActive then
     Form4.LabelActive.Caption:= 'SIMULATION NOT ACTIVE'
@@ -1051,7 +1029,7 @@ end;
 procedure TForm4.Timer2Timer(Sender: TObject);
 // alle 50 ms
 begin
-  if not Form1.Show3DPreview1.Checked then
+  if not Form1.Show3DPreview then
     exit;
   draw_tool_sema:= true;
   if gcsim_active then begin

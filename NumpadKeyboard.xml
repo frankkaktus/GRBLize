@@ -1,0 +1,24 @@
+<keyboard keyboardname="PurNumPad" keyboardtype="PurNumPad" width="190" height="229" minwidth="180" minheight="150" rowheight="48">
+  <row topmargin="2" bottommargin="2">
+    <key vk="103" width="48" height="48" rightmargin="2"/>
+    <key vk="104" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="105" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="27"  caption="Esc" width="48" height="48" leftmargin="2" />
+  </row>
+  <row topmargin="2" bottommargin="2">
+    <key vk="100" width="48" height="48" rightmargin="2"/>
+    <key vk="101" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="102" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key keyimage="3" scancode="14" width="48" height="48" leftmargin="2" stretch="true" publishedname="Backspace"/>
+  </row>
+  <row topmargin="2" bottommargin="2">
+    <key vk="97" width="48" height="48" rightmargin="2"/>
+    <key vk="98" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key vk="99" width="48" height="48" leftmargin="2" rightmargin="2"/>
+    <key keyimage="8" vk="13" width="48" height="92" leftmargin="2" stretch="true" publishedname="Enter"/>
+  </row>
+  <row topmargin="2" bottommargin="0">
+    <key vk="96"  width="96" height="48" rightmargin="2"/>
+    <key vk="110" width="48"  height="48" leftmargin="2" rightmargin="2"/>
+  </row>
+</keyboard>

@@ -14,7 +14,7 @@ object deviceselectbox: Tdeviceselectbox
   OldCreateOrder = False
   Position = poScreenCenter
   PixelsPerInch = 96
-  TextHeight = 16
+  TextHeight = 13
   object Panel1: TPanel
     Left = 0
     Top = 0

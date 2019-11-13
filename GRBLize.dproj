@@ -108,6 +108,12 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <RcCompile Include="CntrMask64.rc">
+            <Form>CntrMask64.res</Form>
+        </RcCompile>
+        <RcCompile Include="NumpadKeyboard.rc">
+            <Form>NumpadKeyboard.res</Form>
+        </RcCompile>
         <DCCReference Include="ABOUT.PAS">
             <Form>AboutBox</Form>
         </DCCReference>
@@ -147,7 +153,6 @@
             <Form>FormParamAssist</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="TouchButton.pas"/>
         <DCCReference Include="AssistRect.pas">
             <Form>FormAssistRect</Form>
             <FormType>dfm</FormType>
@@ -158,6 +163,16 @@
         </DCCReference>
         <DCCReference Include="AssistLine.pas">
             <Form>FormAssistLine</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="SelectPosition.pas">
+            <Form>FormSelectPosition</Form>
+        </DCCReference>
+        <DCCReference Include="CntrCam.pas">
+            <Form>$R *.res</Form>
+        </DCCReference>
+        <DCCReference Include="ToolChange.pas">
+            <Form>FormToolChange</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <None Include="drill_import.inc">

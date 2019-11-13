@@ -111,7 +111,8 @@ begin
       Cells[0,0]:= 'Parameter';
       Cells[1,0]:= 'Value';
       bm_scroll.x:= 0;
-      bm_scroll.y:= Form2.ClientHeight - Form2.DrawingBox.Height;
+      bm_scroll.y:= 0;
+//      bm_scroll.y:= Form2.ClientHeight - Form2.DrawingBox.Height;
       LEDbusy.Checked:= false;
       EnableStatus;  // automatische Upates freischalten
     end;
@@ -263,7 +264,7 @@ end;
 
 procedure TForm1.SgGrblSettingsKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#10, #13, #27] then SgGrblSettingsExit(Sender);
+  if CharInSet(Key, [#10, #13, #27]) then SgGrblSettingsExit(Sender);
 end;
 
 procedure TForm1.SgGrblSettingsSelectCell(Sender: TObject; ACol, ARow: Integer;

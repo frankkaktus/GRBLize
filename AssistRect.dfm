@@ -15,7 +15,7 @@ object FormAssistRect: TFormAssistRect
   TextHeight = 13
   object Label1: TLabel
     Left = 360
-    Top = 27
+    Top = 15
     Width = 46
     Height = 23
     Caption = '[mm]'
@@ -28,7 +28,7 @@ object FormAssistRect: TFormAssistRect
   end
   object Label2: TLabel
     Left = 360
-    Top = 64
+    Top = 65
     Width = 46
     Height = 23
     Caption = '[mm]'
@@ -41,7 +41,7 @@ object FormAssistRect: TFormAssistRect
   end
   object Label3: TLabel
     Left = 360
-    Top = 101
+    Top = 115
     Width = 46
     Height = 23
     Caption = '[mm]'
@@ -54,7 +54,7 @@ object FormAssistRect: TFormAssistRect
   end
   object Label4: TLabel
     Left = 360
-    Top = 138
+    Top = 165
     Width = 46
     Height = 23
     Caption = '[mm]'
@@ -66,8 +66,8 @@ object FormAssistRect: TFormAssistRect
     ParentFont = False
   end
   object LabelWidth: TLabel
-    Left = 162
-    Top = 101
+    Left = 171
+    Top = 115
     Width = 48
     Height = 23
     Caption = 'Breite'
@@ -79,8 +79,8 @@ object FormAssistRect: TFormAssistRect
     ParentFont = False
   end
   object LabelHight: TLabel
-    Left = 162
-    Top = 138
+    Left = 171
+    Top = 165
     Width = 44
     Height = 23
     Caption = 'H'#246'he'
@@ -93,7 +93,7 @@ object FormAssistRect: TFormAssistRect
   end
   object Image1: TImage
     Left = 6
-    Top = 24
+    Top = 25
     Width = 142
     Height = 142
     Margins.Left = 0
@@ -186,9 +186,65 @@ object FormAssistRect: TFormAssistRect
       615C0FDB6DA201BA06E20025200E5002E20025200E5002E20025200E5002E200
       25200E50E27FB5699FE98CA87F100000000049454E44AE426082}
   end
+  object ButtonOK: TSpeedButton
+    Left = 211
+    Top = 218
+    Width = 195
+    Height = 40
+    Caption = 'OK'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonOKClick
+  end
+  object ButtonCancel: TSpeedButton
+    Left = 6
+    Top = 218
+    Width = 195
+    Height = 40
+    Caption = 'Cancel'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonCancelClick
+  end
+  object SpeedButton1: TSpeedButton
+    Left = 153
+    Top = 8
+    Width = 75
+    Height = 40
+    Caption = 'P0'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonP0CamClick
+  end
+  object SpeedButton2: TSpeedButton
+    Left = 153
+    Top = 58
+    Width = 75
+    Height = 40
+    Caption = 'P1'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    OnClick = ButtonP1CamClick
+  end
   object EditP0X: TEdit
     Left = 233
-    Top = 24
+    Top = 12
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -201,10 +257,11 @@ object FormAssistRect: TFormAssistRect
     TabOrder = 0
     Text = '0,0'
     OnExit = OnChangeP0
+    OnKeyPress = OnKeyPress
   end
   object EditP0Y: TEdit
     Left = 298
-    Top = 24
+    Top = 12
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -217,10 +274,11 @@ object FormAssistRect: TFormAssistRect
     TabOrder = 1
     Text = '0,0'
     OnExit = OnChangeP0
+    OnKeyPress = OnKeyPress
   end
   object EditP1X: TEdit
     Left = 233
-    Top = 61
+    Top = 62
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -233,10 +291,11 @@ object FormAssistRect: TFormAssistRect
     TabOrder = 2
     Text = '100,0'
     OnExit = OnChangeP1
+    OnKeyPress = OnKeyPress
   end
   object EditP1Y: TEdit
     Left = 298
-    Top = 61
+    Top = 62
     Width = 60
     Height = 31
     Alignment = taRightJustify
@@ -249,10 +308,11 @@ object FormAssistRect: TFormAssistRect
     TabOrder = 3
     Text = '0,0'
     OnExit = OnChangeP1
+    OnKeyPress = OnKeyPress
   end
   object EditWidth: TEdit
     Left = 233
-    Top = 98
+    Top = 112
     Width = 125
     Height = 31
     Alignment = taRightJustify
@@ -265,10 +325,11 @@ object FormAssistRect: TFormAssistRect
     TabOrder = 4
     Text = '0,0'
     OnExit = OnChangeWidth
+    OnKeyPress = OnKeyPress
   end
   object EditHeight: TEdit
     Left = 233
-    Top = 135
+    Top = 162
     Width = 125
     Height = 31
     Alignment = taRightJustify
@@ -281,36 +342,7 @@ object FormAssistRect: TFormAssistRect
     TabOrder = 5
     Text = '100,0'
     OnExit = OnChangeHeight
-  end
-  object ButtonOK: TButton
-    Left = 211
-    Top = 189
-    Width = 195
-    Height = 40
-    Caption = 'OK'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 6
-    OnClick = ButtonOKClick
-  end
-  object ButtonCancel: TButton
-    Left = 6
-    Top = 189
-    Width = 195
-    Height = 40
-    Caption = 'Cancel'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 7
-    OnClick = ButtonCancelClick
+    OnKeyPress = OnKeyPress
   end
   object TouchKeyboard1: TTouchKeyboard
     Left = 419
@@ -319,34 +351,6 @@ object FormAssistRect: TFormAssistRect
     Height = 250
     GradientEnd = clSilver
     GradientStart = clGray
-    Layout = 'NumPad'
-  end
-  object ButtonP0: TButton
-    Left = 153
-    Top = 24
-    Width = 75
-    Height = 31
-    Caption = 'P0'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 9
-  end
-  object ButtonP1: TButton
-    Left = 153
-    Top = 61
-    Width = 75
-    Height = 31
-    Caption = 'P1'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 10
+    Layout = 'PurNumPad'
   end
 end

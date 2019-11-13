@@ -232,19 +232,15 @@ var Feed: LongWord;
     Dist: Double;
     S:    String;
 begin
-  if JogDelay < 0 then
-//  if (JogDirection.X = 0) and (JogDirection.Y = 0) and (JogDirection.Z = 0) then
-    exit;                                                     // nothing to move
+  if JogDelay < 0 then exit;                                  // nothing to move
 
-  if JogDistance > 500                                                // [10*mm]
-  then Feed:= get_AppDefaults_int(defJoypadFeedVeryFast)    // JogSpeed VeryFast
-  else
-    if JogDistance > 50                                               // [10*mm]
-    then Feed:= get_AppDefaults_int(defJoypadFeedFast)          // JogSpeed Fast
-    else
-      if JogDistance > 5                                              // [10*mm]
-      then Feed:= get_AppDefaults_int(defJoypadFeedSlow)        // JogSpeed Slow
-      else Feed:= get_AppDefaults_int(defJoypadFeedVerySlow);       // very slow
+  if JogDistance > 500 then                                           // [10*mm]
+    Feed:= get_AppDefaults_int(defJoypadFeedVeryFast)       // JogSpeed VeryFast
+  else if JogDistance > 50 then                                       // [10*mm]
+     Feed:= get_AppDefaults_int(defJoypadFeedFast)          // JogSpeed Fast
+  else if JogDistance > 5 then                                        // [10*mm]
+    Feed:= get_AppDefaults_int(defJoypadFeedSlow)               // JogSpeed Slow
+  else Feed:= get_AppDefaults_int(defJoypadFeedVerySlow);           // very slow
 
 // - using of relativ coordinates for jogging
 // - movement will be limit by the soft limits of the mill
@@ -269,7 +265,6 @@ begin
     S:= S + ' Z' + FloatToStrDot(Dist);
 
   if length(S) > 7 then                     // nur wenn sich die Position ändert
-//    grbl_SendWithShortTimeout(S + ' F'+ IntToStr(Feed));
     SendSingleCommandStr(S + ' F'+ IntToStr(Feed));
 
   NeedsRedraw:= true;
@@ -317,7 +312,6 @@ begin
     S:= S + ' Z' + FloatToStrDot(Jog.Z);
 
   if length(S) > 6 then                     // nur wenn sich die Position ändert
-//    grbl_SendWithShortTimeout(S);
     SendSingleCommandStr(S);
 
   NeedsRedraw:= true;
@@ -336,28 +330,30 @@ begin
   grbl_sendRealTimeCmd(#$85);                  // for safety, cancel second time
 end;
 
-procedure TForm1.BitBtnJogMouseDown(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure TForm1.HndlMillCntr(Tag: Integer);
 begin
-  if isSimActive then exit;
+//  if isSimActive then exit;
+
+  if Tag >=256 then begin ResetJogging; exit end;       // handle Mouse/Touch up
+
   if JogDelay <> -1 then exit;                      // new movement only in idle
 
   JogDirection.X := 0; JogDirection.Y := 0; JogDirection.Z := 0;
-  case (Sender as TBitBtn).tag of                         // Welcher Jog-Button?
-    0:  begin                      JogDirection.Y:=  1; end;             // Nord
-    1:  begin JogDirection.X:=  1; JogDirection.Y:=  1; end;          // NordOst
-    2:  begin JogDirection.X:=  1;                      end;              // Ost
-    3:  begin JogDirection.X:=  1; JogDirection.Y:= -1; end;           // Südost
-    4:  begin                      JogDirection.Y:= -1; end;              // Süd
-    5:  begin JogDirection.X:= -1; JogDirection.Y:= -1; end;          // SüdWest
-    6:  begin JogDirection.X:= -1;                      end;             // West
-    7:  begin JogDirection.X:= -1; JogDirection.Y:=  1; end;         // NordWest
-    10: begin JogDirection.Z:=  1;                      end;              // Auf
-    11: begin JogDirection.Z:= -1;                      end;               // Ab
-    20: begin JogDistance:=1;    LabelJogDistance.Caption:= '0.1'; exit end;
-    21: begin JogDistance:=10;   LabelJogDistance.Caption:= '1';   exit end;
-    22: begin JogDistance:=100;  LabelJogDistance.Caption:= '10';  exit end;
-    23: begin JogDistance:=1000; LabelJogDistance.Caption:= '100'; exit end;
+  case Tag of                                             // Welcher Jog-Button?
+     1: begin                      JogDirection.Y:=  1; end;             // Nord
+     2: begin JogDirection.X:=  1; JogDirection.Y:=  1; end;          // NordOst
+     3: begin JogDirection.X:=  1;                      end;              // Ost
+     4: begin JogDirection.X:=  1; JogDirection.Y:= -1; end;           // Südost
+     5: begin                      JogDirection.Y:= -1; end;              // Süd
+     6: begin JogDirection.X:= -1; JogDirection.Y:= -1; end;          // SüdWest
+     7: begin JogDirection.X:= -1;                      end;             // West
+     8: begin JogDirection.X:= -1; JogDirection.Y:=  1; end;         // NordWest
+     9: begin JogDirection.Z:=  1;                      end;              // Auf
+    $A: begin JogDirection.Z:= -1;                      end;               // Ab
+    $B: begin JogDistance:=1;    exit end;
+    $C: begin JogDistance:=10;   exit end;
+    $D: begin JogDistance:=100;  exit end;
+    $E: begin JogDistance:=1000; exit end;
   end;
 
   JogDirection.X:= JogDirection.X * JogDistance /10;
@@ -367,12 +363,6 @@ begin
     else JogDirection.Z:= JogDirection.Z * JogDistance /10;
 
   JogDelay:= c_JogDelay;                          // delay in TimerStatus-Events
-end;
-
-procedure TForm1.BitBtnJogMouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-begin
-  ResetJogging;
 end;
 
 procedure TForm1.BtnCntrMouseDown(Sender: TObject; Button: TMouseButton;
@@ -386,11 +376,11 @@ procedure TForm1.BtnCntrLongEvent;
 begin
   CntrDelay:= -1;                                       // handling by LongEvent
   case ActiveCntrButtom.tag of
-    0: SetDefaultToPos('PARK',      job.park_x, job.park_y, job.park_z, defParkX, fCamActivated);
-    1: SetDefaultToPos('FIXTURE 1', job.fix1_x, job.fix1_y, job.fix1_z, defFix1X, fCamActivated);
-    2: SetDefaultToPos('FIXTURE 2', job.fix2_x, job.fix2_y, job.fix2_z, defFix2X, fCamActivated);
-    3: if fCamActivated and (HilitePoint >= 0) then BtnCamAtPointClick(nil);
-    6: if fCamActivated then BtnCamAtZeroClick(nil)
+    0: SetDefaultToPos('PARK',      job.park_x, job.park_y, job.park_z, defParkX, iCamControl.CamState = camActive);
+    1: SetDefaultToPos('FIXTURE 1', job.fix1_x, job.fix1_y, job.fix1_z, defFix1X, iCamControl.CamState = camActive);
+    2: SetDefaultToPos('FIXTURE 2', job.fix2_x, job.fix2_y, job.fix2_z, defFix2X, iCamControl.CamState = camActive);
+    3: if (iCamControl.CamState = camActive) and (HilitePoint >= 0) then BtnCamAtPointClick(nil);
+    6: if (iCamControl.CamState = camActive) then BtnCamAtZeroClick(nil)
        else begin
          BtnZeroXClick(nil); BtnZeroYClick(nil)
        end;
@@ -409,15 +399,15 @@ begin
   if (Button = mbRight) then BtnCntrLongEvent else
     if (Button = mbLeft) then
       case ActiveCntrButtom.tag of
-        0: MoveToPos('park', job.park_x, job.park_y, job.park_z, false, fCamActivated);
-        1: MoveToPos('fix1', job.fix1_x, job.fix1_y, job.fix1_z, true,  fCamActivated);
-        2: MoveToPos('fix2', job.fix2_x, job.fix2_y, job.fix2_z, true,  fCamActivated);
-        3: if fCamActivated
+        0: MoveToPos('park', job.park_x, job.park_y, job.park_z, false, iCamControl.CamState = camActive);
+        1: MoveToPos('fix1', job.fix1_x, job.fix1_y, job.fix1_z, true,  iCamControl.CamState = camActive);
+        2: MoveToPos('fix2', job.fix2_x, job.fix2_y, job.fix2_z, true,  iCamControl.CamState = camActive);
+        3: if iCamControl.CamState = camActive
              then BtnMoveCamPointClick(Sender)
              else BtnMoveToolPointClick(Sender);
         4: MoveToPos('job center', WorkZero.X+final_bounds_mm.mid.x, WorkZero.Y+final_bounds_mm.mid.y, 0, false, false);
         5: BtnZcontactClick(Sender);
-        6: if fCamActivated
+        6: if iCamControl.CamState = camActive
              then BtnMoveCamZeroClick(Sender)
              else BtnMoveXYzeroClick(Sender);
         7: BtnMoveZzeroClick(Sender);
@@ -429,64 +419,17 @@ begin
   ColorDialog1.Color:= OverlayColor.Color;
   if not ColorDialog1.Execute then Exit;
   OverlayColor.Color:= ColorDialog1.Color;
-  overlay_color:= OverlayColor.Color;
+  iCamControl.Color:=  ColorDialog1.Color;
+end;
+
+procedure TForm1.TrackBar1Change(Sender: TObject);
+begin
+  iCamControl.Diameter:= TrackBar1.Position;
 end;
 
 procedure TForm1.RadioGroupCamClick(Sender: TObject);
 begin
-  if fCamPresent then begin
-    CamIsOn:= RadioGroupCam.ItemIndex = 1;
-    SwitchCam(CamIsOn)
-  end else begin
-    RadioGroupCam.ItemIndex:= 0;
-  end;
-  Repaint;
-end;
-
-procedure TForm1.OnNewVideoFrame(Sender : TObject; Width, Height: integer; DataPtr: pointer);
-var
-  r : integer;
-  bm_center_x, bm_center_y: Integer;
-begin
-  inc(FrameCounter);
-  // Retreive latest video image
-  if not fCamActivated then
-    exit;
-  fVideoImage.GetBitmap(fVideoBitmap);
-  with fVideoBitmap do begin
-    // Paint a crosshair onto video image
-    bm_center_x:= VideoBox.width div 2;
-    bm_center_y:= VideoBox.height div 2;
-    Canvas.Brush.Style := bsClear;
-    Canvas.Pen.Width   := 1;
-    Canvas.Pen.Color:= overlay_color;
-    Canvas.moveto(0, bm_center_y);
-    Canvas.lineto(Width,  bm_center_y);
-    Canvas.moveto(bm_center_x, 0);
-    Canvas.lineto(bm_center_x, Height);
-    r := (VideoBox.height * TrackBar1.Position div 256);
-    Canvas.ellipse(bm_center_x -r, bm_center_y -r,
-        bm_center_x +r, bm_center_y +r);
-    VideoBox.Canvas.Draw(0, 0, fVideoBitmap);
-  end;
-end;
-
-procedure TForm1.SwitchCam(SwitchOn: boolean);
-begin
-  if fCamPresent and (SwitchOn <> fCamActivated) then begin
-    if SwitchOn then begin
-      Label43.Caption:='    Initializing Webcam...';
-      LabelMoveTo.Caption:= 'Move CAM to...';
-      Application.ProcessMessages;
-      fVideoImage.VideoStart(DeviceList[0]);
-    end else begin
-      Label43.Caption:='  Webcam/Video Device off';
-      LabelMoveTo.Caption:= 'Move Tool to...';
-      fVideoImage.VideoStop;
-      TabSheetPos.Refresh;
-    end;
-    fCamActivated := SwitchOn;
-  end;
+  SwitchCam(RadioGroupCam.ItemIndex = 1);
 end;
 
 procedure TForm1.BtnZcontactClick(Sender: TObject);

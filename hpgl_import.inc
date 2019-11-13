@@ -1622,8 +1622,6 @@ var
   s           : string;
   SVG, SVGtemp: TSvg;
   i, j, n     : integer;
-  P0x, P0y    : double;
-  P1x, P1y    : double;
 
   ///// File/Data-Handling /////////////////////////////////////////////////////
   Lsvg        : integer;                  // length of the instant mail SVG data
@@ -1649,7 +1647,6 @@ var
 
   procedure InsertParameter(const old: string; const new: double; var s: string);
   var i, j: integer;
-      a:    double;
       s2:   string;
   begin
     i:= pos(old, s);
@@ -1669,7 +1666,6 @@ var
 
   function SvgGetLine(var s: string):boolean;     // read one line of SVG source
   begin
-    result:= true;
     inc(z);
     if pos('[', my_name) > 0 then begin                        // internal data?
       if z > Lsvg then result:= false

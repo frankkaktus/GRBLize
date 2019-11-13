@@ -6,61 +6,63 @@ interface
 uses Classes, Grids, ParamAssist, import_files;
 
 const
-    defHeadline            = 0;
-    defToolchangePause     = 1;
-    defToolchangeX         = 2;
-    defToolchangeY         = 3;
-    defToolchangeZ         = 4;
-    defParkpositionOnEnd   = 5;
-    defParkX               = 6;
-    defParkY               = 7;
-    defParkZ               = 8;
-    defCamXoff             = 9;
-    defCamYoff             = 10;
-    defCamZabs             = 11;
-    defUseFixedProbe       = 12;
-    defProbeX              = 13;
-    defProbeY              = 14;
-    defProbeZ              = 15;
-    defUsePartProbe        = 16;
-    defProbeZgauge         = 17;
-    defInvertZ             = 18;
-    defSpindleWait         = 19;
-    defMaxRotation         = 20;
-    defAtcEnabled          = 21;
-    defAtcZeroX            = 22;
-    defAtcZeroY            = 23;
-    defAtcPickupZ          = 24;
-    defAtcDeltaX           = 25;
-    defAtcDeltaY           = 26;
-    defAtcToolReleaseCmd   = 27;
-    defAtcToolClampCmd     = 28;
-    defTableX              = 29;
-    defTableY              = 30;
-    defTableZ              = 31;
-    defFix1X               = 32;
-    defFix1Y               = 33;
-    defFix1Z               = 34;
-    defFix2X               = 35;
-    defFix2Y               = 36;
-    defFix2Z               = 37;
-    defJoypadFeedVeryFast  = 38;
-    defJoypadFeedFast      = 39;
-    defJoypadFeedSlow      = 40;
-    defJoypadFeedVerySlow  = 41;
-    defJoypadZaxisButton   = 42;
-    defJoypadFastJogButton = 43;
-    defJoypadZeroAllButton = 44;
-    defJoypadFloodToggle   = 45;
-    defJoypadSpindleToggle = 46;
-    defJoypadFeedHold      = 47;
-    defPcbInflate          = 48;
-    defPcbDimDiameter      = 49;
-    defPcbZCycle           = 50;
-    defPositivMachineSpace = 51;
-    defTouchKeyboard       = 52;
+//--- app settings -------------------------------------------------------------
+  defHeadline            = 0;
+  defToolchangePause     = 1;
+  defToolchangeX         = 2;
+  defToolchangeY         = 3;
+  defToolchangeZ         = 4;
+  defParkpositionOnEnd   = 5;
+  defParkX               = 6;
+  defParkY               = 7;
+  defParkZ               = 8;
+  defCamXoff             = 9;
+  defCamYoff             = 10;
+  defCamZabs             = 11;
+  defUseFixedProbe       = 12;
+  defProbeX              = 13;
+  defProbeY              = 14;
+  defProbeZ              = 15;
+  defUsePartProbe        = 16;
+  defProbeZgauge         = 17;
+  defInvertZ             = 18;
+  defSpindleWait         = 19;
+  defMaxRotation         = 20;
+  defAtcEnabled          = 21;
+  defAtcZeroX            = 22;
+  defAtcZeroY            = 23;
+  defAtcPickupZ          = 24;
+  defAtcDeltaX           = 25;
+  defAtcDeltaY           = 26;
+  defAtcToolReleaseCmd   = 27;
+  defAtcToolClampCmd     = 28;
+  defTableX              = 29;
+  defTableY              = 30;
+  defTableZ              = 31;
+  defFix1X               = 32;
+  defFix1Y               = 33;
+  defFix1Z               = 34;
+  defFix2X               = 35;
+  defFix2Y               = 36;
+  defFix2Z               = 37;
+  defJoypadFeedVeryFast  = 38;
+  defJoypadFeedFast      = 39;
+  defJoypadFeedSlow      = 40;
+  defJoypadFeedVerySlow  = 41;
+  defJoypadZaxisButton   = 42;
+  defJoypadFastJogButton = 43;
+  defJoypadZeroAllButton = 44;
+  defJoypadFloodToggle   = 45;
+  defJoypadSpindleToggle = 46;
+  defJoypadFeedHold      = 47;
+  defPcbInflate          = 48;
+  defPcbDimDiameter      = 49;
+  defPcbZCycle           = 50;
+  defPositivMachineSpace = 51;
+  defTouchKeyboard       = 52;
+  defCamName             = 53;
 
-    defDefaultCount        = 53;
+  defDefaultCount        = 54;
 
 type
   T_machine_options = record   // Ausstattungsdetails
@@ -104,8 +106,15 @@ procedure set_AppDefaults_bool(sg_row: Integer; new_val: boolean);
 implementation
 
 uses
-  SysUtils, StrUtils, System.IniFiles, Forms, grbl_com, grbl_player_main,
-  drawing_window, Graphics;
+  SysUtils,
+  StrUtils,
+  System.IniFiles,
+  Forms,
+  grbl_com,
+  grbl_player_main,
+  drawing_window,
+  Graphics,
+  CntrCam;
 
 procedure InitMachineOptions;
 begin
@@ -325,9 +334,9 @@ begin
     RowCount:= defDefaultCount;
     Rows[defHeadline].DelimitedText:=            'Parameter,Value';
     Rows[defToolchangePause].DelimitedText:=     '"Enable Tool Change in Job",OFF';
-    Rows[defToolchangeX].DelimitedText:=         '"Tool Change Position X absolute",10';
-    Rows[defToolchangeY].DelimitedText:=         '"Tool Change Position Y absolute",100';
-    Rows[defToolchangeZ].DelimitedText:=         '"Tool Change Position Z absolute",-5';
+    Rows[defToolchangeX].DelimitedText:=         '"Tool Change Position X abs.",10';
+    Rows[defToolchangeY].DelimitedText:=         '"Tool Change Position Y abs.",100';
+    Rows[defToolchangeZ].DelimitedText:=         '"Tool Change Position Z abs.",-5';
     Rows[defParkpositionOnEnd].DelimitedText:=   '"Park Position on End",ON';
     Rows[defParkX].DelimitedText:=               '"Park X absolute",100';
     Rows[defParkY].DelimitedText:=               '"Park Y absolute",100';
@@ -376,6 +385,7 @@ begin
     Rows[defPcbZCycle].DelimitedText:=           '"PCB Dimension ZCycle",0.8';
     Rows[defPositivMachineSpace].DelimitedText:= '"Positive Machine Space",OFF';
     Rows[defTouchKeyboard].DelimitedText:=       '"TouchKeyboard",OFF';
+    Rows[defCamName].DelimitedText:=                 '"Kamera",keine';
   end;
   ClearFiles;
   Form1.Memo1.lines.add('Job/application default settings applied');
@@ -412,7 +422,7 @@ begin
     job.probe_y:=                   get_AppDefaults_float(defProbeY);
     job.probe_z:=                   get_AppDefaults_float(defProbeZ);
 
-    job.use_part_probe:=            Cells[1,defUsePartProbe] = 'ON';
+    job.use_part_probe:=            get_AppDefaults_bool(defUsePartProbe);
 
     job.probe_z_gauge:=             get_AppDefaults_float(defProbeZgauge);
 
@@ -439,12 +449,17 @@ begin
     job.fix2_x:=                    get_AppDefaults_float(defFix2X);
     job.fix2_y:=                    get_AppDefaults_float(defFix2Y);
     job.fix2_z:=                    get_AppDefaults_float(defFix2Z);
+
+    iCamControl.Camera:=            get_AppDefaults_str(defCamName);
+    iCamControl.Diameter:=          Form1.TrackBar1.Position;
   end;
 end;
 
 Procedure LoadIniFile;
-var IniName: String;
-    Ini:     TMemIniFile;
+var IniName:  String;
+    Ini:      TMemIniFile;
+    Index:    integer;
+//    OldEvent: TNotifyEvent;
 
   procedure ReadDef(Field:integer; Group, Key: string);
   begin
@@ -510,6 +525,25 @@ begin
       ReadDef(defPositivMachineSpace,'Other',       'PositiveMachineSpace');
       ReadDef(defInvertZ,            'Other',       'InvertZinG-Code');
       ReadDef(defTouchKeyboard,      'Other',       'TouchKeyboard');
+      ReadDef(defCamName,            'Other',       'Cam');
+
+      AppDefaultGridListToJob;
+
+      iCamControl.CamState:= Ini.ReadInteger('State', 'CamOffOn', iCamControl.CamState);
+      case iCamControl.CamState of
+        0: Index:= 0;
+        1: Index:= 1;
+        else begin             // do not change order of the following commands!
+          iCamControl.CamState:= 1;         // cam is not switched on currently!
+          Index:= 1;
+        end;
+      end;
+      Form1.RadioGroupCam.ItemIndex:= Index;
+
+      iCamControl.Color:=    Ini.ReadInteger('State', 'CamColor', iCamControl.Color);
+      Form1.OverlayColor.Color:= iCamControl.Color;
+                                     // written to iCamControl by OnChange-Event
+      Form1.TrackBar1.Position:= Ini.ReadInteger('State', 'CamDiameter', Form1.TrackBar1.Position);
     finally
       Ini.Free;
     end;
@@ -523,15 +557,15 @@ begin
   Ini.AutoSave:= true;
   try
     with Form1.SgAppDefaults do begin
-      Ini.WriteString('ToolChange',  'EnableInJob',          Cells[1, defToolchangePause]);
-      Ini.WriteString('ToolChange',  'PosXabsolute',         Cells[1, defToolchangeX]);
-      Ini.WriteString('ToolChange',  'PosYabsolute',         Cells[1, defToolchangeY]);
-      Ini.WriteString('ToolChange',  'PosZabsolute',         Cells[1, defToolchangeZ]);
-      Ini.WriteString('Park',        'OnEnd',                Cells[1, defParkpositionOnEnd]);
-      Ini.WriteString('Park',        'PosXabsolute',         Cells[1, defParkX]);
-      Ini.WriteString('Park',        'PosYabsolute',         Cells[1, defParkY]);
-      Ini.WriteString('Park',        'PosZabsolute',         Cells[1, defParkZ]);
-      Ini.WriteString('Cam',         'PosXoffset',           Cells[1, defCamXoff]);
+      Ini.WriteString('ToolChange',  'EnableInJob',          Cells[1,defToolchangePause]);
+      Ini.WriteString('ToolChange',  'PosXabsolute',         Cells[1,defToolchangeX]);
+      Ini.WriteString('ToolChange',  'PosYabsolute',         Cells[1,defToolchangeY]);
+      Ini.WriteString('ToolChange',  'PosZabsolute',         Cells[1,defToolchangeZ]);
+      Ini.WriteString('Park',        'OnEnd',                Cells[1,defParkpositionOnEnd]);
+      Ini.WriteString('Park',        'PosXabsolute',         Cells[1,defParkX]);
+      Ini.WriteString('Park',        'PosYabsolute',         Cells[1,defParkY]);
+      Ini.WriteString('Park',        'PosZabsolute',         Cells[1,defParkZ]);
+      Ini.WriteString('Cam',         'PosXoffset',           Cells[1,defCamXoff]);
       Ini.WriteString('Cam',         'PosYoffset',           Cells[1,defCamYoff]);
       Ini.WriteString('Cam',         'PosZabsolute',         Cells[1,defCamZabs]);
       Ini.WriteString('FixedZProbe', 'Enable',               Cells[1,defUseFixedProbe]);
@@ -569,12 +603,17 @@ begin
       Ini.WriteString('Jogpad',      'FloodToggleButton',    Cells[1,defJoypadFloodToggle]);
       Ini.WriteString('Jogpad',      'SpindleToggleButton',  Cells[1,defJoypadSpindleToggle]);
       Ini.WriteString('Jogpad',      'FeedHoldButton',       Cells[1,defJoypadFeedHold]);
-      Ini.WriteString('PCB',         'Inflate',       Cells[1,defPcbInflate]);
-      Ini.WriteString('PCB',         'DimDiameter',       Cells[1,defPcbDimDiameter]);
-      Ini.WriteString('PCB',         'ZCycle',       Cells[1,defPcbZCycle]);
+      Ini.WriteString('PCB',         'Inflate',              Cells[1,defPcbInflate]);
+      Ini.WriteString('PCB',         'DimDiameter',          Cells[1,defPcbDimDiameter]);
+      Ini.WriteString('PCB',         'ZCycle',               Cells[1,defPcbZCycle]);
       Ini.WriteString('Other',       'PositiveMachineSpace', Cells[1,defPositivMachineSpace]);
       Ini.WriteString('Other',       'InvertZinG-Code',      Cells[1,defInvertZ]);
       Ini.WriteString('Other',       'TouchKeyboard',        Cells[1,defTouchKeyboard]);
+      Ini.WriteString('Other',       'Cam',                  Cells[1,defCamName]);
+
+      Ini.WriteInteger('State', 'CamColor',    iCamControl.Color);
+      Ini.WriteInteger('State', 'CamOffOn',    iCamControl.CamState);
+      Ini.WriteInteger('State', 'CamDiameter', Form1.TrackBar1.Position);
     end;
   finally
     Ini.Free;

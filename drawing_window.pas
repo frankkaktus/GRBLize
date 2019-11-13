@@ -66,7 +66,7 @@ type
 
   private
     ZoomValue: double;
-    ZoomDistance: integer;
+//    ZoomDistance: integer;
     procedure SetZoom(Z: double);
   public
     DrawingBitmap: TBitmap;
@@ -80,8 +80,6 @@ const
 var
   Scale: Double;
   Form2: TForm2;
-  fActivated, fCamPresent : boolean;
-
   drawing_offset_x, drawing_offset_y: Integer;
   scaled_X, scaled_Y: Double;
   bm_scroll: Tpoint;
@@ -467,6 +465,7 @@ begin
   if my_radius < 1 then
     my_radius:= 1;
 
+  my_fill_color3:= 0;            // avoid warning because of left initialization
   if (my_final_entry.shape = drillhole) or
      (not has_multiple_millings) or
      (not my_final_entry.enable) or
@@ -817,7 +816,7 @@ var
   j: Integer;
   po1, po2, pmax: Tpoint;
 begin
-  if not Form1.ShowDrawing1.Checked then
+  if not Form1.ShowDrawing then
     exit;
   set_drawing_scales;
   draw_grid(Form2.DrawingBitmap);
@@ -867,8 +866,7 @@ begin
     end;
     draw_move(po1, po2, clgray, true, false);
   end;
-  if not fActivated then
-    update_drawing;
+  update_drawing;
 end;
 
 // #############################################################################
@@ -911,13 +909,11 @@ begin
   DrawingBitmap.Width:= 1200;
 
   bm_scroll.x:= 0;
-  bm_scroll.y:= ClientHeight - DrawingBox.Height;
+  bm_scroll.y:= 0;
 
   mouse_start.x:= MaxInt;           // block moving up to left click into window
-  ZoomDistance:=  MaxInt;                               // zoom gesture inactive
 
-// if form_visible then
-//    show;
+  Zoom:= 1;
 end;
 
 procedure TForm2.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -939,7 +935,8 @@ begin
     grbl_ini.Free;
   end;
 
-  Form1.WindowMenu1.Items[0].Checked:= false;
+//  Form1.WindowMenu1.Items[0].Checked:= false;
+  Form1.ShowDrawing:= false;
 end;
 
 procedure TForm2.FormActivate(Sender: TObject);
@@ -994,7 +991,6 @@ end;
 // #############################################################################
 // #############################################################################
 
-
 procedure Uncheck_PopupPoint;
 var i: Integer;
 begin
@@ -1039,7 +1035,6 @@ procedure TForm2.DrawingBoxMouseDown(Sender: TObject; Button: TMouseButton;
 // Select/Move mit linker Maustaste
 // Popup-Menu mit rechter Maustaste
 var pt: TPoint;
-  move_enabled: boolean;
 begin
   if (ssLeft in Shift) then begin
     SetCursor(Screen.Cursors[crSize]);

@@ -27,8 +27,8 @@ begin
   end else begin
     int_scale:= gl_bresenham_scale;
   end;
-  show_3d:= Form1.Show3DPreview1.Checked;
-  show_drawing:= Form1.ShowDrawing1.Checked;
+  show_3d:= Form1.Show3DPreview;
+  show_drawing:= Form1.ShowDrawing;
 
   x0:= round(xf0*int_scale); x1:= round(xf1*int_scale);
   y0:= round(yf0*int_scale); y1:= round(yf1*int_scale);
@@ -152,9 +152,6 @@ procedure InterpretGcodeLine(my_str: string);
 // interpretiert einen GRBL-Befehl und stellt ihn in 3D-Simulation dar
 // beherrscht nur rudimentäre Funktionenm reicht aber für 90% der Daten
 // gcsim_x, gcsim_y, gcsim_z: Double;
-// gcsim_x_old, gcsim_y_old, gcsim_z_old: Double;
-// gcsim_offs_x, gcsim_offs_y, gcsim_offs_z: Double;
-// definier in main
 var
   idx: Integer;
   x,y,z: Double;
@@ -165,7 +162,7 @@ begin
   if (pos('M3', my_str) > 0) or (pos('M4', my_str) > 0) then begin
     GLSspindle_on_off(true);
     mdelay(500);
-    if Form1.Show3DPreview1.Checked then // wird vorher aufgerufen
+    if Form1.Show3DPreview then                        // wird vorher aufgerufen
       GLSmakeToolArray(gcsim_dia);
   end;
   if (my_str[1] = '/') or (my_str[1] = '(') then // andere Kommentare
@@ -235,6 +232,9 @@ begin
   grbl_mpos.x:= grbl_wpos.x + WorkZero.X;
   grbl_mpos.y:= grbl_wpos.y + WorkZero.y;
   grbl_mpos.z:= grbl_wpos.z + WorkZero.Z;
+
+  DisplayWorkPosition;
+  DisplayMachinePosition;
 end;
 
 

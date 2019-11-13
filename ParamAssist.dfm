@@ -118,6 +118,7 @@ object FormParamAssist: TFormParamAssist
     TabOrder = 0
     Text = 'Diameter'
     OnChange = Calculate
+    OnKeyPress = EditDiameterKeyPress
   end
   object ComboBoxBlades: TComboBox
     Left = 140
@@ -133,6 +134,7 @@ object FormParamAssist: TFormParamAssist
     ParentFont = False
     TabOrder = 1
     OnChange = Calculate
+    OnKeyPress = EditDiameterKeyPress
     Items.Strings = (
       '1'
       '2'
@@ -153,6 +155,7 @@ object FormParamAssist: TFormParamAssist
     ParentFont = False
     TabOrder = 2
     OnChange = Calculate
+    OnKeyPress = EditDiameterKeyPress
   end
   object OKButton: TButton
     Left = 243
@@ -191,6 +194,6 @@ object FormParamAssist: TFormParamAssist
     Height = 250
     GradientEnd = clSilver
     GradientStart = clGray
-    Layout = 'NumPad'
+    Layout = 'PurNumPad'
   end
 end

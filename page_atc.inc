@@ -192,20 +192,29 @@ begin
   SendListToGrbl;
   if job.toolchange_pause and
      job.use_fixed_probe then
-    my_dlg_result:= MessageDlg('Tool Change Pause. Change tool manually to'
-        + #13 + #13 + pen_description(atcArray[atc_idx_new].pen)
-        + #13 + #13 + 'Click YES when done and clear machine for TLC,'
-        + #13 + 'NO to keep current tool or CANCEL to abort job.'
-        + #13 + 'All tools must have same length if TLC disabled.',
-          mtConfirmation, mbYesNocancel, 0)
-  else
-    my_dlg_result:= MessageDlg('Tool Change Pause. Change tool manually to'
-        + #13 + #13 + pen_description(atcArray[atc_idx_new].pen)
-        + #13 + #13 + 'All tools must have same length since TLC is disabled.'
-        + #13 + 'Click YES when done, CANCEL to abort job.',
-          mtConfirmation, [mbYes, mbCancel], 0);
+//    my_dlg_result:= MessageDlg('Tool Change Pause. Change tool manually to'
+//        + #13 + #13 + pen_description(atcArray[atc_idx_new].pen)
+//        + #13 + #13 + 'Click YES when done and clear machine for TLC,'
+//        + #13 + 'NO to keep current tool or CANCEL to abort job.'
+//        + #13 + 'All tools must have same length if TLC disabled.',
+//          mtConfirmation, mbYesNocancel, 0)
+    my_dlg_result:= FormToolChange.ShowModal(false,true,pen_description(atcArray[atc_idx_new].pen) )
 
-  if Form1.Show3DPreview1.checked and (my_dlg_result = mrYES) then
+  else
+//    my_dlg_result:= MessageDlg('Tool Change Pause. Change tool manually to'
+//        + #13 + #13 + pen_description(atcArray[atc_idx_new].pen)
+//        + #13 + #13 + 'All tools must have same length since TLC is disabled.'
+//        + #13 + 'Click YES when done, CANCEL to abort job.',
+//          mtConfirmation, [mbYes, mbCancel], 0);
+    my_dlg_result:= FormToolChange.ShowModal(true,false,pen_description(atcArray[atc_idx_new].pen) );
+
+  if my_dlg_result = mrCancel then begin
+    Form1.Memo1.lines.add('Job canceled by user!');
+    result:= false;
+    exit;
+  end;
+
+  if Form1.Show3DPreview and (my_dlg_result = mrYES) then
     GLSsetToolToATCidx(atc_idx_new);
 
   if job.toolchange_pause and
@@ -218,10 +227,6 @@ begin
       end;
   end else begin
     Form1.Memo1.lines.add('Tool not changed, Tool Delta Z retained');
-  end;
-  if my_dlg_result = mrCANCEL then begin
-    result:= false;
-    exit;
   end;
 
   for i:= 0 to c_numATCslots do
@@ -258,7 +263,7 @@ begin
   atcArray[atc_idx].isInSpindle:= false;
 //    atcArray[tool_idx].tool_pen:= tool_idx;
   grbl_moveSlowZ(job.atc_pickup_z, true);  // move Z down
-  if Form1.Show3DPreview1.Checked then begin
+  if Form1.Show3DPreview then begin
     GLSupdateATC;
     GLSsetToolDia(0, 0);
   end;
@@ -293,7 +298,7 @@ begin
   grbl_moveZ(0, true);  // move Z up
   SendListToGrbl;
   atcArray[atc_idx].isInSpindle:= true;
-  if Form1.Show3DPreview1.Checked then begin
+  if Form1.Show3DPreview then begin
     GLSupdateATC;
     GLSsetToolToATCidx(atc_idx);
   end;

@@ -184,19 +184,16 @@ begin
 // - X-Offset bei Drehung nach Q2 und Q3
 // - Y-Offset bei Drehung nach Q3 und Q4
 
+  apply_pen_change;
+
   // have to include into the global offset
   job.global_offset.X:=0;
   job.global_offset.Y:=0;
 
-  apply_pen_change;
-
   if final_bounds_mm.min.x < 0 then
-    job.global_offset.X:= {1} - final_bounds.min.x;
-//    job.global_offset.X:= {1} - round(final_bounds_mm.min.x*c_hpgl_scale);
+    job.global_offset.X:= -final_bounds.min.x;
   if final_bounds_mm.min.y < 0 then
-    job.global_offset.Y:= {1} - final_bounds.min.y;
-//    job.global_offset.Y:= {1} - round(final_bounds_mm.min.y*c_hpgl_scale);
-            // offset will be includes in ListBlocks, called by apply_pen_change
+    job.global_offset.Y:= -final_bounds.min.y;
   if (job.global_offset.X > 0) or (job.global_offset.Y > 0) then
     apply_pen_change;
 
@@ -216,7 +213,7 @@ begin
   end;
 
   a:= final_bounds_mm.max.y-final_bounds_mm.min.y;
-  if (final_bounds_mm.min.y >= 0) then begin                   // quadrant 1 or 2
+  if (final_bounds_mm.min.y >= 0) then begin                  // quadrant 1 or 2
     job.partsize_y:= 1+round(1.1*final_bounds_mm.max.y);
     SizeY:= 0;
   end else begin
@@ -225,11 +222,11 @@ begin
   end;
 
   Sx:= 4; Sy:= 4; bm_scroll.x:= 0; bm_scroll.y:= 0;            // default values
-  if job.partsize_x + SizeX > 1 then begin                     // avoid division by 0
+  if job.partsize_x + SizeX > 1 then begin                // avoid division by 0
     Sx:= round( 0.9 * Form2.DrawingBox.Width  / (job.partsize_x + SizeX)) - 1;
     bm_scroll.x:=  round(0.9 * SizeX * (Form2.ClientWidth  / (job.partsize_x + SizeX)));
   end;
-  if job.partsize_y + SizeY > 1 then begin                     // avoid division by 0
+  if job.partsize_y + SizeY > 1 then begin                // avoid division by 0
     Sy:= round( 0.9 * Form2.DrawingBox.Height / (job.partsize_y + SizeY)) - 1;
     bm_scroll.y:= -round(0.9 * SizeY * (Form2.ClientHeight / (job.partsize_y + SizeY)));
   end;
@@ -499,10 +496,19 @@ begin
 end;
 
 procedure TForm1.FileNew1Execute(Sender: TObject);
+var Sx, Sy: double;
 begin
   InitJob;
   DefaultsGridListToJob;
   JobSettingsPath:= '';
+
+  Sx:= round( 9 * Form2.DrawingBox.Width  / job.partsize_x)/10;
+  Sy:= round( 9 * Form2.DrawingBox.Height / job.partsize_y)/10;
+  if Sx < Sy then Form2.Zoom:= Sx
+             else Form2.Zoom:= Sy;
+
+  bm_scroll.x:= 0; bm_scroll.y:= 0;
+
   draw_cnc_all;
   Form1.Caption:= c_ProgNameStr;
 end;
@@ -600,7 +606,7 @@ end;
 
 procedure TForm1.SgJobDefaultsKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#10, #13, #27] then SgJobDefaultsExit(Sender);
+  if CharInSet(Key, [#10, #13, #27]) then SgJobDefaultsExit(Sender);
 end;
 
 procedure TForm1.SgJobDefaultsSelectCell(Sender: TObject; ACol, ARow: Integer;
@@ -645,7 +651,10 @@ begin
     end else begin
       Pen.Color := cl3Dlight;
       Font.Color:=clblack;
-      if (aCol = 1) and ((aStr= 'ON') or (aStr= 'OFF') or (ARow=defJoypadZaxisButton))
+      if  (aCol = 1) and
+         ((aStr= 'ON') or
+          (aStr= 'OFF') or
+          (ARow in [defJoypadZaxisButton, defCamName]))
       then begin                                                      // ON, OFF
         FrameRect(Rect);
         inc(Rect.Left);
@@ -655,10 +664,8 @@ begin
         Brush.Color := cl3Dlight;
         InflateRect(Rect, -1, -1);
         Font.Color := clblack;
-        if aStr = 'ON' then
-          Font.Style := [fsBold]
-        else
-          Font.Style := [];
+        Font.Style := [];
+        if aStr = 'ON' then Font.Style := [fsBold];
         aRect := Rect;
         FillRect(Rect);
         aStr:= Cells[ACol, ARow];
@@ -677,11 +684,43 @@ end;
 
 procedure TForm1.SgAppDefaultsKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#10, #13, #27] then SgAppDefaultsExit(Sender);
+  if CharInSet(Key, [#10, #13, #27]) then SgAppDefaultsExit(Sender);
 end;
 
-procedure TForm1.SgAppDefaultsSelectCell(Sender: TObject; ACol, ARow: Integer;
-  var CanSelect: Boolean);
+procedure TForm1.SwitchCam(On: boolean);
+begin
+                                           // state don't changed, nothing to do
+  if (iCamControl.CamState <> camActive) xor On then exit;
+
+  if not On then begin
+    LabelMoveTo.Caption:= 'Move Tool to...';
+    iCamControl.SwitchCam(false)                            // switch camera off
+  end else begin                                                 // ...switch on
+    if iCamControl.Camera = 'keine' then begin     // nothing there to switch on
+      ReportWarning('Cam activation failed!' + #13 + 'No cam choosen in Defaults.');
+    end else begin
+      if iCamControl.SwitchCam(true) then LabelMoveTo.Caption:= 'Move CAM to...'
+      else ReportWarning('Cam activation failed!' + #13 + 'Please prove if "' +
+             iCamControl.Camera + '" is registered in the System.');
+    end;
+  end;
+end;
+
+procedure TForm1.PopupMenuCamClick(Sender: TObject);
+begin
+  SwitchCam(false);
+  with SgAppDefaults do
+  begin
+    iCamControl.Camera:=  TMenuItem(Sender).Caption;
+    Cells[1,defCamName]:= TMenuItem(Sender).Caption;
+  end;
+  SwitchCam(RadioGroupCam.ItemIndex=1);
+end;
+
+procedure TForm1.SgAppDefaultsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var i:  integer;
+    P:  TPoint;
+    mi: TMenuItem;
 begin
   with SgAppDefaults do begin                // right col is for hide focus only
     if ACol = ColCount-1 then begin CanSelect:= false; exit end;
@@ -703,6 +742,27 @@ begin
       else if ARow in [defAtcToolReleaseCmd,
                        defAtcToolClampCmd] then
         SgEditorOn(SgAppDefaults,ACol,ARow,false,false)
+      else if ARow in [defCamName] then
+        begin
+          perform( WM_CANCELMODE, 0, 0 ); // verhindert Mausaktion in Stringgrid
+          P:= ClientToScreen(CellRect(0,ARow).BottomRight);
+
+          if PopupMenuCam.Items.Count > 0 then    // delete all existing entries
+             PopupMenuCam.Items.Clear;
+
+          with iCamControl do begin          // insert all cameras of the system
+            for i:=-1 to DeviceList.Count-1 do begin
+              mi:= TMenuItem.Create(Form1);
+              if i<0 then mi.Caption:= 'keine'       // additional entry "keine"
+                     else mi.Caption:= DeviceList[i];
+              mi.Checked:= Camera=mi.Caption;                       // set check
+              mi.OnClick:= Form1.PopupMenuCamClick;               // set handler
+              PopupMenuCam.Items.Add(mi);                         // add to menu
+              P.Y:=P.Y-26;
+            end;
+          end;
+          PopupMenuCam.Popup(P.X,P.Y-30);                         // start menu
+        end
       else SgEditorOn(SgAppDefaults,ACol,ARow,true,true);
     end;
   end;
@@ -804,7 +864,7 @@ end;
 
 procedure TForm1.SgFilesKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#10, #13, #27] then SgFilesExit(Sender);
+  if CharInSet(Key, [#10, #13, #27]) then SgFilesExit(Sender);
 end;
 
 procedure TForm1.ComboBoxPenExit(Sender: TObject);
@@ -887,7 +947,7 @@ begin
                  if trim(Cells[0, Row]) = '' then
                    with FileParamArray[Row-1] do begin
                      P0.x:=50;   P0.y:= 50;
-                     P1.x:=100; P1.y:= 100;
+                     P1.x:=20; P1.y:= 20;
                    end;
                  if FormAssistCircle.ShowModal(Row) = mrOK then begin
                    Cells[0, Row]:= FormAssistCircle.GetId;
@@ -919,16 +979,16 @@ begin
       0:
         begin                                             // prove type of input
           if pos('[',Cells[0,ARow]) <> 0 then begin         // edit instant mill
-            if pos('Line',Cells[0,Row]) = 1 then                        // Line?
+            if pos('Line',Cells[0,ARow]) = 1 then begin                 // Line?
               if FormAssistLine.ShowModal(ARow) = mrOK then
                 Cells[0, ARow]:= FormAssistLine.GetId
-            else if pos('Rect',Cells[0,Row]) = 1 then              // rectangle?
+            end else if pos('Rect',Cells[0,ARow]) = 1 then begin   // rectangle?
               if FormAssistRect.ShowModal(ARow) = mrOK then
                 Cells[0, ARow]:= FormAssistRect.GetId
-            else if pos('Circle',Cells[0,Row]) = 1 then               // circle?
+            end else if pos('Circle',Cells[0,ARow]) = 1 then begin    // circle?
               if FormAssistCircle.ShowModal(ARow) = mrOK then
                 Cells[0, ARow]:= FormAssistCircle.GetId
-            else exit;                                        // element unknown
+            end else exit;                                    // element unknown
             OpenFilesInGrid;                                             // open
           end else begin
             if AnsiUpperCase(ExtractFileExt(Cells[0, ARow])) = '.NCB' then begin
@@ -1020,6 +1080,10 @@ begin
   TouchKeyboardOff;
 end;
 
+procedure TForm1.MemoCommentKeyPress(Sender: TObject; var Key: Char);
+begin
+  if CharInSet(Key, [#27]) then MemoCommentExit(Sender);
+end;
 
 
 

@@ -435,15 +435,19 @@ begin
     ForceToolPositions(grbl_wpos.x, grbl_wpos.y, grbl_wpos.z);
     Form1.Memo1.lines.add('');
     Memo1.lines.clear;
-    my_btn := MessageDlg('Is machine zeroed with selected tool?'
-      + #13 + 'Make sure spindle collet is loaded with:'
-      + #13 + #13 + pen_description(atcArray[ToolInSpindle].pen)
-      + #13 + #13 + 'Click OK to proceed, CANCEL to terminate job.', mtConfirmation, mbOKCancel, 0);
-    Memo1.lines.Clear;
-    Memo1.lines.add('Job run started.');
+    Memo1.lines.add('Tool run started.');
     Memo1.lines.add('=========================================');
-    if my_btn = mrCancel then
+
+//    my_btn := MessageDlg('Is machine zeroed with selected tool?'
+//      + #13 + 'Make sure spindle collet is loaded with:'
+//      + #13 + #13 + pen_description(atcArray[ToolInSpindle].pen)
+//      + #13 + #13 + 'Click OK to proceed, CANCEL to terminate job.', mtConfirmation, mbOKCancel, 0);
+    my_btn:= FormToolChange.ShowModal(true,false,pen_description(atcArray[ToolInSpindle].pen) );
+
+    if my_btn = mrCancel then begin
+      Memo1.lines.add('Tool canceled by user!');
       exit;
+    end;
 
     // ATC- bzw. Tool-Liste abarbeiten
     SendSingleCommandStr('G0 G53 Z0');
@@ -521,17 +525,21 @@ begin
     GLSsetToolToATCidx(ToolInSpindle);
 
     Memo1.lines.clear;
-    my_btn := MessageDlg('Is machine zeroed with first tool?'
-      + #13 + 'Make sure spindle collet is loaded with:'
-      + #13 + #13 + pen_description(atcArray[ToolInSpindle].pen)
-      + #13 + #13 + 'Click OK to proceed, CANCEL to terminate job.', mtConfirmation, mbOKCancel, 0);
-    Memo1.lines.Clear;
     Memo1.lines.add('Job run started.');
     Memo1.lines.add('=========================================');
+//    my_btn := MessageDlg('Is machine zeroed with first tool?'
+//      + #13 + 'Make sure spindle collet is loaded with:'
+//      + #13 + #13 + pen_description(atcArray[ToolInSpindle].pen)
+//      + #13 + #13 + 'Click OK to proceed, CANCEL to terminate job.', mtConfirmation, mbOKCancel, 0);
+    my_btn:= FormToolChange.ShowModal(true,false,pen_description(atcArray[ToolInSpindle].pen) );
+
+    if my_btn = mrCancel then begin
+      Memo1.lines.add('Job canceled by user!');
+      exit;
+    end;
+
     GLSneedsRedrawTimeout:= 1;
     GLSneedsATCupdateTimeout:= 1;
-    if my_btn = mrCancel then
-      exit;
     if (not atcArray[ToolInSpindle].TREFok) and CheckToolChange.checked then begin
       if not DoTLCandConfirm(false, ToolInSpindle) then
         exit;
@@ -598,7 +606,7 @@ begin
     spindle_on_off(false);
 
     if CheckEndPark.Checked
-      then MoveToPos('park', job.park_x, job.park_y, job.park_z, false, fCamActivated)
+      then MoveToPos('park', job.park_x, job.park_y, job.park_z, false, iCamControl.CamState = camActive)
       else SendSingleCommandStr('G0 X0 Y0'); // Work Zero
   finally
     SgATC.enabled:= true;
@@ -707,7 +715,7 @@ begin
     + #13 + #13 + 'Click OK when tool has been changed.',
     mtConfirmation, mbOKCancel, 0) = mrCancel then
       exit;
-  if Form1.Show3DPreview1.checked then
+  if Form1.Show3DPreview then
     GLSupdateATC;
   InvalidateTLCs;
   CancelG43offset;

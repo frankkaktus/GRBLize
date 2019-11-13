@@ -623,7 +623,7 @@ begin
   pen:= blockArrays[fileID, blockID].pen;
   if pen < 0 then exit;                                    // kein Pen vorhanden
 
-  HiliteLen:= length(blockArrays[fileID,blockID].hilite);
+//  HiliteLen:= length(blockArrays[fileID,blockID].hilite);
   HiliteLen:= length(blockArrays[fileID,blockID].hilite_raw);
 
   OffsetX:= job.pens[pen].offset.x + job.global_offset.x;

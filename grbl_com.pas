@@ -156,7 +156,7 @@ var
 
 implementation
 
-uses grbl_player_main, glscene_view, drawing_window, Graphics;
+uses grbl_player_main, glscene_view, drawing_window, Graphics, SelectPosition;
 
 var ms0: int64;
 

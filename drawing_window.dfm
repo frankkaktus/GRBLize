@@ -56,7 +56,6 @@ object Form2: TForm2
     Align = alCustom
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 0
-    ExplicitWidth = 857
     DesignSize = (
       927
       38)
@@ -170,7 +169,7 @@ object Form2: TForm2
     object ViewZoom: TStaticText
       Left = 854
       Top = 7
-      Width = 28
+      Width = 30
       Height = 27
       Anchors = [akRight, akBottom]
       Caption = '0,9'
@@ -186,7 +185,7 @@ object Form2: TForm2
       Left = 753
       Top = 8
       Width = 58
-      Height = 20
+      Height = 27
       Anchors = [akRight, akBottom]
       Caption = 'Zoom:'
       Font.Charset = DEFAULT_CHARSET

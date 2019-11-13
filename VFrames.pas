@@ -375,13 +375,12 @@ end;
 procedure TVideoImage.Free;
 begin
   fDisplayCanvas := nil;
-  fBitmapGray.Free;
-  fBitmap.Free;
-  JPG.Free;
+  FreeAndNil(fBitmapGray);
+  FreeAndNil(fBitmap);
+  FreeAndNil(JPG);
   AppEvent.OnIdle := nil;
-  AppEvent.Free;
-  AppEvent := nil;
-  MemStream.Free;
+  FreeAndNil(AppEvent);
+  FreeAndNil(MemStream);
   inherited Free;
 end;
 

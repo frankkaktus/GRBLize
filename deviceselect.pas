@@ -24,11 +24,10 @@ type
 
 var
   deviceselectbox: Tdeviceselectbox;
+
 implementation
 
 {$R *.dfm}
-
-
 
 procedure Tdeviceselectbox.CancelButtonClick(Sender: TObject);
 begin
@@ -40,14 +39,10 @@ begin
   deviceselectbox.ModalResult:=mrCancel;
   if deviceselectbox.ListView1.itemindex >= 0 then
     deviceselectbox.ModalResult:=mrOK;
-//  if (ComboBoxComPort.ItemIndex > 0) then
-//    deviceselectbox.ModalResult:= mrOK;
 end;
-
 
 procedure Tdeviceselectbox.ListView1DblClick(Sender: TObject);
 begin
-//  ComboBoxComPort.ItemIndex:=0;
   OKButtonClick(Sender);
 end;
 

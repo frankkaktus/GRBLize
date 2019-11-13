@@ -23,19 +23,22 @@ type
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
-    LabelP0: TLabel;
-    LabelP1: TLabel;
     LabelAngle: TLabel;
     LabelLength: TLabel;
     ButtonOK: TButton;
     ButtonCancel: TButton;
     TouchKeyboard1: TTouchKeyboard;
+    ButtonP0Cam: TSpeedButton;
+    ButtonP1Cam: TSpeedButton;
     procedure OnChangeP0(Sender: TObject);
     procedure ButtonCancelClick(Sender: TObject);
     procedure ButtonOKClick(Sender: TObject);
     procedure OnChangeP1(Sender: TObject);
     procedure OnChangeAngle(Sender: TObject);
     procedure OnChangeLength(Sender: TObject);
+    procedure ButtonP1CamClick(Sender: TObject);
+    procedure ButtonP0CamClick(Sender: TObject);
+    procedure OnKeyPress(Sender: TObject; var Key: Char);
 //    procedure FormShow(Sender: TObject);
   private
     { Private-Deklarationen }
@@ -55,16 +58,39 @@ implementation
 
 {$R *.dfm}
 
-uses grbl_player_main;
+uses grbl_player_main, SelectPosition, ParamAssist;
 
 procedure TFormAssistLine.ButtonCancelClick(Sender: TObject);
 begin
-  FormAssistLine.ModalResult:= mrCancel;
+  ModalResult:= mrCancel;
 end;
 
 procedure TFormAssistLine.ButtonOKClick(Sender: TObject);
 begin
-  FormAssistLine.ModalResult:= mrOK;
+  ModalResult:= mrOK;
+end;
+
+procedure TFormAssistLine.ButtonP0CamClick(Sender: TObject);
+begin
+  if FormSelectPosition.ShowModal(P0) = mrOK then begin
+    EditP0X.Text:= FormSelectPosition.WPosX.Caption;
+    EditP0Y.Text:= FormSelectPosition.WPosY.Caption;
+    OnChangeP0(nil);
+  end;
+end;
+
+procedure TFormAssistLine.ButtonP1CamClick(Sender: TObject);
+begin
+  if FormSelectPosition.ShowModal(P1) = mrOK then begin
+    EditP1X.Text:= FormSelectPosition.WPosX.Caption;
+    EditP1Y.Text:= FormSelectPosition.WPosY.Caption;
+    OnChangeP1(nil);
+  end;
+end;
+
+procedure TFormAssistLine.OnKeyPress(Sender: TObject; var Key: Char);
+begin
+  if CharInSet(Key, [#27]) then ButtonCancelClick(Sender);
 end;
 
 function TFormAssistLine.ShowModal(Row: integer):integer;
@@ -80,8 +106,8 @@ begin
   EditLength.Text:= FormatFloat('0.0',Length);
   Angle:= arcsin( (P1.y-P0.y) / Length );
   EditAngle.Text:= FormatFloat('0.00',Angle*180/Pi);
-  if Form1.TouchSupport then Width:= 690                           // touch supported?
-                        else Width:= 380;
+  if Form1.TouchSupport then Width:= 620                     // touch supported?
+                        else Width:= 310;
 
   Result:= inherited ShowModal;
 
@@ -99,20 +125,6 @@ begin
                       FormatFloat('0.0',P1.Y) + ')]';
 end;
 
-{procedure TFormAssistLine.FormShow(Sender: TObject);
-begin
-  EditP0X.Text:= FormatFloat('0.0',P0.X);
-  EditP0Y.Text:= FormatFloat('0.0',P0.Y);
-  EditP1X.Text:= FormatFloat('0.0',P1.X);
-  EditP1Y.Text:= FormatFloat('0.0',P1.Y);
-  Length:= sqrt( (P1.x-P0.x)*(P1.x-P0.x) + (P1.y-P0.y)*(P1.y-P0.y) );
-  EditLength.Text:= FormatFloat('0.0',Length);
-  Angle:= arcsin( (P1.y-P0.y) / Length );
-  EditAngle.Text:= FormatFloat('0.00',Angle*180/Pi);
-  if Form1.TouchSupport then Width:= 690                           // touch supported?
-                        else Width:= 380;
-end;
- }
 procedure TFormAssistLine.OnChangeAngle(Sender: TObject);
 begin
   Angle:= Pi / 180 * StrToFloatDef(EditAngle.Text, Angle);

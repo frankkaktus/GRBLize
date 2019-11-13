@@ -1,8 +1,7 @@
 program GRBLize;
 
-
-
-
+{$R 'CntrMask64.res' 'CntrMask64.rc'}
+{$R 'NumpadKeyboard.res' 'NumpadKeyboard.rc'}
 
 uses
   Forms,
@@ -31,10 +30,12 @@ uses
   Vcl.Themes,
   Vcl.Styles,
   ParamAssist in 'ParamAssist.pas' {FormParamAssist},
-  TouchButton in 'TouchButton.pas',
   AssistRect in 'AssistRect.pas' {FormAssistRect},
   AssistCircle in 'AssistCircle.pas' {FormAssistCircle},
-  AssistLine in 'AssistLine.pas' {FormAssistLine};
+  AssistLine in 'AssistLine.pas' {FormAssistLine},
+  SelectPosition in 'SelectPosition.pas' {FormSelectPosition},
+  CntrCam in 'CntrCam.pas',
+  ToolChange in 'ToolChange.pas' {FormToolChange};
 
 {$R *.res}
 
@@ -42,12 +43,27 @@ begin
   Application.Initialize;
   Application.Title := 'GRBLize';
   Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TForm2, Form2);
+  Application.CreateForm(TForm4, Form4);
   Application.CreateForm(TAboutBox, AboutBox);
   Application.CreateForm(TFormGerber, FormGerber);
   Application.CreateForm(TFormParamAssist, FormParamAssist);
   Application.CreateForm(TFormAssistRect, FormAssistRect);
   Application.CreateForm(TFormAssistCircle, FormAssistCircle);
   Application.CreateForm(TFormAssistLine, FormAssistLine);
+  Application.CreateForm(TFormSelectPosition, FormSelectPosition);
+  Application.CreateForm(TFormToolChange, FormToolChange);
+  Form1.BeforeRun;
+  NeedsRedraw:= true;
+
+  Form1.VideoBox:=             TCntrBox.Create(Form1.TabSheetPos);
+  Form1.VideoBox.Parent:=      Form1.TabSheetPos;
+  Form1.VideoBox.Name:=        'MillVodeoBox';
+  Form1.VideoBox.Caption:=     '';
+  Form1.VideoBox.Height:=      resHeight;
+  Form1.VideoBox.Width:=       resWidth;
+  Form1.VideoBox.FOnMillCntr:= Form1.HndlMillCntr;
+
   Application.Run;
   Application.Terminate;
 end.
